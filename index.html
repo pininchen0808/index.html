@@ -1,187 +1,205 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2026 社團記帳系統</title>
-    <!-- 使用 Tailwind CSS 與 Lucide Icons -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- React 相關庫 -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>2026 社團記帳系統</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- React + Babel (保留 JSX) -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- ✅ Firebase compat（關鍵） -->
+  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
+
+  <style>
+    body { font-family: 'Noto Sans TC', sans-serif; }
+  </style>
 </head>
+
 <body class="bg-slate-50">
-    <div id="root"></div>
+  <div id="root"></div>
 
-    <script type="text/babel">
-        const { useState, useEffect, useMemo } = React;
-        const { 
-            LayoutDashboard, PlusCircle, Trash2, TrendingUp, 
-            TrendingDown, Wallet, Loader2, FileText, User 
-        } = lucide;
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
 
-        // Firebase 模組化導入 (CDN 版本)
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, onSnapshot, addDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    // ========= 🔥 Firebase 設定（自己填） =========
+    const firebaseConfig = {
+      apiKey: "你的",
+      authDomain: "你的",
+      projectId: "你的",
+      storageBucket: "你的",
+      messagingSenderId: "你的",
+      appId: "你的"
+    };
 
-        // Firebase 配置
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'club-manager-2026';
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    const auth = firebase.auth();
+    const appId = "club-manager-2026";
 
-        function App() {
-            const [user, setUser] = useState(null);
-            const [records, setRecords] = useState([]);
-            const [loading, setLoading] = useState(true);
-            const [isModalOpen, setIsModalOpen] = useState(false);
-            const [formData, setFormData] = useState({
-                date: new Date().toISOString().split('T')[0],
-                type: 'expense',
-                category: '活動費',
-                item: '',
-                amount: '',
-                remark: ''
-            });
+    function App() {
+      const [user, setUser] = useState(null);
+      const [records, setRecords] = useState([]);
+      const [loading, setLoading] = useState(true);
+      const [isModalOpen, setIsModalOpen] = useState(false);
+      const [formData, setFormData] = useState({
+        date: new Date().toISOString().split('T')[0],
+        type: 'expense',
+        category: '活動費',
+        item: '',
+        amount: ''
+      });
 
-            useEffect(() => {
-                const initAuth = async () => {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
-                };
-                initAuth();
-                const unsubscribe = onAuthStateChanged(auth, setUser);
-                return () => unsubscribe();
-            }, []);
+      // 🔐 登入
+      useEffect(() => {
+        firebase.auth().signInAnonymously();
+        const unsub = firebase.auth().onAuthStateChanged(setUser);
+        return () => unsub();
+      }, []);
 
-            useEffect(() => {
-                if (!user) return;
-                const q = collection(db, 'artifacts', appId, 'public', 'data', 'records');
-                const unsubscribe = onSnapshot(q, (snapshot) => {
-                    const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    setRecords(data.sort((a, b) => new Date(b.date) - new Date(a.date)));
-                    setLoading(false);
-                }, () => setLoading(false));
-                return () => unsubscribe();
-            }, [user]);
+      // 📡 監聽資料
+      useEffect(() => {
+        if (!user) return;
 
-            const stats = useMemo(() => {
-                const income = records.filter(r => r.type === 'income').reduce((sum, r) => sum + Number(r.amount || 0), 0);
-                const expense = records.filter(r => r.type === 'expense').reduce((sum, r) => sum + Number(r.amount || 0), 0);
-                return { income, expense, balance: income - expense };
-            }, [records]);
+        const ref = db.collection('artifacts')
+          .doc(appId)
+          .collection('public')
+          .doc('data')
+          .collection('records');
 
-            const handleAddRecord = async (e) => {
-                e.preventDefault();
-                if (!user || !formData.amount || !formData.item) return;
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'records'), {
-                    ...formData,
-                    amount: Number(formData.amount),
-                    createdAt: new Date().toISOString(),
-                    userId: user.uid
-                });
-                setIsModalOpen(false);
-                setFormData({ date: new Date().toISOString().split('T')[0], type: 'expense', category: '活動費', item: '', amount: '', remark: '' });
-            };
+        const unsub = ref.onSnapshot(snapshot => {
+          const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+          setRecords(data.sort((a, b) => new Date(b.date) - new Date(a.date)));
+          setLoading(false);
+        });
 
-            if (loading) return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin text-blue-600" /></div>;
+        return () => unsub();
+      }, [user]);
 
-            return (
-                <div className="min-h-screen">
-                    {/* 導覽列 */}
-                    <nav className="bg-white border-b sticky top-0 z-10 px-4 h-16 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <Wallet className="text-blue-600 w-6 h-6" />
-                            <h1 className="font-bold text-xl">2026 社團記帳</h1>
-                        </div>
-                        <button onClick={() => setIsModalOpen(true)} className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 shadow-sm">
-                            <PlusCircle className="w-4 h-4" /> 新增紀錄
-                        </button>
-                    </nav>
+      // 📊 統計
+      const stats = useMemo(() => {
+        const income = records.filter(r => r.type === 'income')
+          .reduce((s, r) => s + Number(r.amount || 0), 0);
+        const expense = records.filter(r => r.type === 'expense')
+          .reduce((s, r) => s + Number(r.amount || 0), 0);
+        return { income, expense, balance: income - expense };
+      }, [records]);
 
-                    <main className="max-w-4xl mx-auto p-4 space-y-6">
-                        {/* 統計面板 */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="bg-white p-6 rounded-xl border">
-                                <p className="text-slate-500 text-sm">總收入</p>
-                                <p className="text-2xl font-bold text-emerald-600">${stats.income.toLocaleString()}</p>
-                            </div>
-                            <div className="bg-white p-6 rounded-xl border">
-                                <p className="text-slate-500 text-sm">總支出</p>
-                                <p className="text-2xl font-bold text-rose-600">${stats.expense.toLocaleString()}</p>
-                            </div>
-                            <div className="bg-blue-600 p-6 rounded-xl text-white">
-                                <p className="text-blue-100 text-sm">目前餘額</p>
-                                <p className="text-2xl font-bold">${stats.balance.toLocaleString()}</p>
-                            </div>
-                        </div>
+      // ➕ 新增
+      const handleAdd = async (e) => {
+        e.preventDefault();
+        if (!formData.item || !formData.amount) return;
 
-                        {/* 列表 */}
-                        <div className="bg-white rounded-xl border overflow-hidden">
-                            <table className="w-full text-left">
-                                <thead className="bg-slate-50 text-slate-500 text-sm">
-                                    <tr>
-                                        <th className="px-6 py-3">日期</th>
-                                        <th className="px-6 py-3">類別/項目</th>
-                                        <th className="px-6 py-3 text-right">金額</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y">
-                                    {records.map(r => (
-                                        <tr key={r.id} className="hover:bg-slate-50">
-                                            <td className="px-6 py-4 text-sm text-slate-500">{r.date}</td>
-                                            <td className="px-6 py-4">
-                                                <div className="font-medium">{r.item}</div>
-                                                <div className="text-xs text-slate-400">{r.category}</div>
-                                            </td>
-                                            <td className={`px-6 py-4 text-right font-bold ${r.type === 'income' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                                {r.type === 'income' ? '+' : '-'}${Number(r.amount).toLocaleString()}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </main>
+        const ref = db.collection('artifacts')
+          .doc(appId)
+          .collection('public')
+          .doc('data')
+          .collection('records');
 
-                    {/* Modal */}
-                    {isModalOpen && (
-                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-                            <div className="bg-white rounded-2xl w-full max-w-md p-6">
-                                <h3 className="text-lg font-bold mb-4">新增記帳</h3>
-                                <form onSubmit={handleAddRecord} className="space-y-4">
-                                    <input type="date" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="w-full border p-2 rounded-lg" required />
-                                    <select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value})} className="w-full border p-2 rounded-lg">
-                                        <option value="expense">支出</option>
-                                        <option value="income">收入</option>
-                                    </select>
-                                    <input type="text" placeholder="項目內容" value={formData.item} onChange={e => setFormData({...formData, item: e.target.value})} className="w-full border p-2 rounded-lg" required />
-                                    <input type="number" placeholder="金額" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} className="w-full border p-2 rounded-lg" required />
-                                    <div className="flex gap-2 pt-2">
-                                        <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 border p-2 rounded-lg">取消</button>
-                                        <button type="submit" className="flex-1 bg-blue-600 text-white p-2 rounded-lg">儲存</button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    )}
+        await ref.add({
+          ...formData,
+          amount: Number(formData.amount),
+          createdAt: new Date().toISOString(),
+          userId: user.uid
+        });
+
+        setIsModalOpen(false);
+        setFormData({
+          date: new Date().toISOString().split('T')[0],
+          type: 'expense',
+          category: '活動費',
+          item: '',
+          amount: ''
+        });
+      };
+
+      if (loading) {
+        return <div className="h-screen flex items-center justify-center text-slate-400">載入中...</div>;
+      }
+
+      return (
+        <div className="max-w-4xl mx-auto p-4 space-y-6">
+
+          {/* Header */}
+          <div className="flex justify-between items-center">
+            <h1 className="text-xl font-bold">社團記帳</h1>
+            <button onClick={() => setIsModalOpen(true)} className="bg-blue-600 text-white px-4 py-2 rounded">
+              新增
+            </button>
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-4">
+            <Card title="收入" value={stats.income} color="text-emerald-600"/>
+            <Card title="支出" value={stats.expense} color="text-rose-600"/>
+            <Card title="結餘" value={stats.balance} color="text-blue-600"/>
+          </div>
+
+          {/* Table */}
+          <div className="bg-white border rounded">
+            <table className="w-full">
+              <thead className="bg-slate-100 text-sm">
+                <tr>
+                  <th className="p-3">日期</th>
+                  <th>項目</th>
+                  <th className="text-right pr-4">金額</th>
+                </tr>
+              </thead>
+              <tbody>
+                {records.map(r => (
+                  <tr key={r.id} className="border-t">
+                    <td className="p-3 text-sm">{r.date}</td>
+                    <td>
+                      <div>{r.item}</div>
+                      <div className="text-xs text-slate-400">{r.category}</div>
+                    </td>
+                    <td className={`text-right pr-4 font-bold ${r.type === 'income' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                      {r.type === 'income' ? '+' : '-'}${Number(r.amount).toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Modal */}
+          {isModalOpen && (
+            <div className="fixed inset-0 bg-black/40 flex items-center justify-center">
+              <form onSubmit={handleAdd} className="bg-white p-6 rounded w-80 space-y-3">
+                <input type="date" value={formData.date} onChange={e=>setFormData({...formData,date:e.target.value})} className="w-full border p-2"/>
+                <input placeholder="項目" value={formData.item} onChange={e=>setFormData({...formData,item:e.target.value})} className="w-full border p-2"/>
+                <input type="number" placeholder="金額" value={formData.amount} onChange={e=>setFormData({...formData,amount:e.target.value})} className="w-full border p-2"/>
+
+                <div className="flex gap-2">
+                  <button type="button" onClick={()=>setIsModalOpen(false)} className="flex-1 border p-2">取消</button>
+                  <button className="flex-1 bg-blue-600 text-white p-2">儲存</button>
                 </div>
-            );
-        }
+              </form>
+            </div>
+          )}
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
+        </div>
+      );
+    }
+
+    const Card = ({title, value, color}) => (
+      <div className="bg-white p-4 rounded border">
+        <div className="text-sm text-slate-400">{title}</div>
+        <div className={`text-xl font-bold ${color}`}>${value.toLocaleString()}</div>
+      </div>
+    );
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
 </body>
 </html>
