@@ -10,7 +10,7 @@ import {
   query, 
   updateDoc, 
   deleteDoc,
-  timestamp
+  serverTimestamp
 } from 'firebase/firestore';
 import { 
   getAuth, 
@@ -33,10 +33,17 @@ import {
   Trophy,
   Info,
   Calendar,
-  DollarSign
+  DollarSign,
+  UserPlus,
+  AlertCircle,
+  FileText,
+  Medal,
+  Star,
+  UserCheck,
+  CreditCard
 } from 'lucide-react';
 
-// Firebase 配置 (由環境提供)
+// --- Firebase Configuration ---
 const firebaseConfig = JSON.parse(__firebase_config);
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -49,11 +56,20 @@ export default function App() {
   const [transactions, setTransactions] = useState([]);
   const [courses, setCourses] = useState([]);
   const [reimbursements, setReimbursements] = useState([]);
+  const [points, setPoints] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // --- 表單狀態 ---
+  // --- UI States ---
   const [showAddTx, setShowAddTx] = useState(false);
-  const [newTx, setNewTx] = useState({ type: 'expense', amount: '', category: '老師費用', note: '', date: new Date().toISOString().split('T')[0], isEstimated: false });
+  const [newTx, setNewTx] = useState({ 
+    type: 'expense', 
+    amount: '', 
+    category: '老師費用', 
+    note: '', 
+    date: new Date().toISOString().split('T')[0], 
+    isEstimated: false,
+    isPaidByMe: false // 新增：是否為個人代墊
+  });
   
   const [showAddCourse, setShowAddCourse] = useState(false);
   const [newCourse, setNewCourse] = useState({ name: '', date: '', fee: '', description: '' });
@@ -61,9 +77,18 @@ export default function App() {
   const [newStudent, setNewStudent] = useState({ name: '', phone: '' });
 
   const [showAddReimbursement, setShowAddReimbursement] = useState(false);
-  const [newReimbursement, setNewReimbursement] = useState({ month: '3月', target: '社團補助金', amount: '', invoiceOwner: '', note: '' });
+  const [newReimbursement, setNewReimbursement] = useState({ 
+    month: '3月', 
+    target: '社團補助金', 
+    amount: '', 
+    invoiceOwner: '', 
+    note: '' 
+  });
 
-  // 1. 認證處理
+  const [showAddPoint, setShowAddPoint] = useState(false);
+  const [newPoint, setNewPoint] = useState({ team: '第一組', member: '', score: '', reason: '' });
+
+  // 1. Authentication
   useEffect(() => {
     const initAuth = async () => {
       try {
@@ -84,41 +109,73 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // 2. 資料監聽 (Firestore)
+  // 2. Data Listeners (Firestore)
   useEffect(() => {
     if (!user) return;
 
-    // 監聽記帳資料
-    const unsubTx = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'transactions'), (snapshot) => {
-      setTransactions(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => new Date(b.date) - new Date(a.date)));
-      setLoading(false);
-    }, (err) => console.error(err));
+    const unsubTx = onSnapshot(
+      collection(db, 'artifacts', appId, 'public', 'data', 'transactions'), 
+      (snapshot) => {
+        setTransactions(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+          .sort((a, b) => new Date(b.date) - new Date(a.date)));
+        setLoading(false);
+      }, (err) => console.error("Tx listen err:", err)
+    );
 
-    // 監聽課程資料
-    const unsubCourse = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'courses'), (snapshot) => {
-      setCourses(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => new Date(b.date) - new Date(a.date)));
-    }, (err) => console.error(err));
+    const unsubCourse = onSnapshot(
+      collection(db, 'artifacts', appId, 'public', 'data', 'courses'), 
+      (snapshot) => {
+        setCourses(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+          .sort((a, b) => new Date(b.date) - new Date(a.date)));
+      }, (err) => console.error("Course listen err:", err)
+    );
 
-    // 監聽核銷資料
-    const unsubReim = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'reimbursements'), (snapshot) => {
-      setReimbursements(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    }, (err) => console.error(err));
+    const unsubReim = onSnapshot(
+      collection(db, 'artifacts', appId, 'public', 'data', 'reimbursements'), 
+      (snapshot) => {
+        setReimbursements(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      }, (err) => console.error("Reim listen err:", err)
+    );
+
+    const unsubPoints = onSnapshot(
+      collection(db, 'artifacts', appId, 'public', 'data', 'points'),
+      (snapshot) => {
+        setPoints(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      }, (err) => console.error("Points listen err:", err)
+    );
 
     return () => {
       unsubTx();
       unsubCourse();
       unsubReim();
+      unsubPoints();
     };
   }, [user]);
 
-  // --- 財務邏輯 ---
+  // --- Financial Stats Logic ---
   const stats = useMemo(() => {
     const income = transactions.filter(t => t.type === 'income' && !t.isEstimated).reduce((sum, t) => sum + Number(t.amount), 0);
     const expense = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + Number(t.amount), 0);
     const estIncome = transactions.filter(t => t.type === 'income' && t.isEstimated).reduce((sum, t) => sum + Number(t.amount), 0);
-    return { income, expense, balance: income - expense, estIncome };
+    
+    // 計算代墊款：類型為支出、勾選代墊、且尚未標記為已退還
+    const pendingMyAdvance = transactions
+      .filter(t => t.type === 'expense' && t.isPaidByMe && !t.isReimbursedToMe)
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+
+    return { income, expense, balance: income - expense, estIncome, pendingMyAdvance };
   }, [transactions]);
 
+  // --- Points Logic ---
+  const leaderboard = useMemo(() => {
+    const groups = points.reduce((acc, p) => {
+      acc[p.team] = (acc[p.team] || 0) + Number(p.score);
+      return acc;
+    }, {});
+    return Object.entries(groups).sort((a, b) => b[1] - a[1]);
+  }, [points]);
+
+  // --- Handlers ---
   const handleAddTx = async (e) => {
     e.preventDefault();
     if (!user) return;
@@ -126,22 +183,70 @@ export default function App() {
       await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'transactions'), {
         ...newTx,
         amount: Number(newTx.amount),
+        isReimbursedToMe: false, // 預設尚未歸還給代墊人
         createdBy: user.uid,
         createdAt: new Date().toISOString()
       });
       setShowAddTx(false);
-      setNewTx({ type: 'expense', amount: '', category: '老師費用', note: '', date: new Date().toISOString().split('T')[0], isEstimated: false });
+      setNewTx({ 
+        type: 'expense', 
+        amount: '', 
+        category: '老師費用', 
+        note: '', 
+        date: new Date().toISOString().split('T')[0], 
+        isEstimated: false,
+        isPaidByMe: false 
+      });
     } catch (err) { console.error(err); }
   };
 
-  // --- 課程邏輯 ---
+  const handleToggleReimbursed = async (txId, currentStatus) => {
+    if (!user) return;
+    try {
+      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'transactions', txId), {
+        isReimbursedToMe: !currentStatus
+      });
+    } catch (err) { console.error(err); }
+  };
+
+  const handleAddCourse = async (e) => {
+    e.preventDefault();
+    if (!user) return;
+    try {
+      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'courses'), {
+        ...newCourse,
+        fee: Number(newCourse.fee),
+        students: [],
+        createdAt: new Date().toISOString()
+      });
+      setShowAddCourse(false);
+      setNewCourse({ name: '', date: '', fee: '', description: '' });
+    } catch (err) { console.error(err); }
+  };
+
+  const handleDeleteDoc = async (coll, id) => {
+    if (!confirm('確定要刪除此項目嗎？')) return;
+    try {
+      await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', coll, id));
+      if (selectedCourse?.id === id) setSelectedCourse(null);
+    } catch (err) { console.error(err); }
+  };
+
   const handleRegister = async (e) => {
     e.preventDefault();
     if (!newStudent.name || !selectedCourse || !user) return;
-    const student = { id: Date.now().toString(), name: newStudent.name, phone: newStudent.phone, paid: false, registeredAt: new Date().toISOString() };
+    const student = { 
+      id: Date.now().toString(), 
+      name: newStudent.name, 
+      phone: newStudent.phone, 
+      paid: false, 
+      registeredAt: new Date().toISOString() 
+    };
     const updatedStudents = [...(selectedCourse.students || []), student];
     try {
-      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'courses', selectedCourse.id), { students: updatedStudents });
+      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'courses', selectedCourse.id), { 
+        students: updatedStudents 
+      });
       setNewStudent({ name: '', phone: '' });
       setSelectedCourse({ ...selectedCourse, students: updatedStudents });
     } catch (err) { console.error(err); }
@@ -150,14 +255,31 @@ export default function App() {
   const togglePaid = async (courseId, studentId) => {
     if (!user) return;
     const course = courses.find(c => c.id === courseId);
-    const updatedStudents = course.students.map(s => s.id === studentId ? { ...s, paid: !s.paid } : s);
+    const updatedStudents = course.students.map(s => 
+      s.id === studentId ? { ...s, paid: !s.paid } : s
+    );
     try {
-      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'courses', courseId), { students: updatedStudents });
+      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'courses', courseId), { 
+        students: updatedStudents 
+      });
       if (selectedCourse?.id === courseId) setSelectedCourse({ ...course, students: updatedStudents });
     } catch (err) { console.error(err); }
   };
 
-  // --- 核銷邏輯 ---
+  const handleAddPoint = async (e) => {
+    e.preventDefault();
+    if (!user) return;
+    try {
+      await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'points'), {
+        ...newPoint,
+        score: Number(newPoint.score),
+        timestamp: new Date().toISOString()
+      });
+      setShowAddPoint(false);
+      setNewPoint({ team: '第一組', member: '', score: '', reason: '' });
+    } catch (err) { console.error(err); }
+  };
+
   const handleAddReimbursement = async (e) => {
     e.preventDefault();
     if (!user) return;
@@ -172,7 +294,12 @@ export default function App() {
     } catch (err) { console.error(err); }
   };
 
-  if (loading && !user) return <div className="flex items-center justify-center h-screen bg-slate-50"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div></div>;
+  if (loading && !user) return (
+    <div className="flex flex-col items-center justify-center h-screen bg-slate-50">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600 mb-4"></div>
+      <p className="text-slate-500 font-medium">載入中，請稍候...</p>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-900 font-sans pb-24">
@@ -187,7 +314,7 @@ export default function App() {
               <h1 className="text-xl font-black tracking-tight text-slate-800">2026 社團管理</h1>
               <div className="flex items-center gap-2 mt-0.5">
                 <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Cloud Database Connected</p>
+                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">系統連線中</p>
               </div>
             </div>
           </div>
@@ -203,7 +330,7 @@ export default function App() {
       <main className="max-w-7xl mx-auto p-4 md:p-8">
         
         {/* Navigation Tabs */}
-        <div className="flex bg-slate-200/50 p-1.5 rounded-[2rem] mb-10 w-full overflow-x-auto no-scrollbar shadow-inner">
+        <div className="flex bg-slate-200/50 p-1.5 rounded-3xl mb-10 w-full overflow-x-auto no-scrollbar shadow-inner">
           {[
             { id: 'accounting', label: '財務總表', icon: Wallet, color: 'text-indigo-600' },
             { id: 'courses', label: '課程報名', icon: BookOpen, color: 'text-blue-600' },
@@ -213,23 +340,523 @@ export default function App() {
             <button 
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2.5 px-8 py-3.5 rounded-[1.5rem] whitespace-nowrap transition-all flex-1 md:flex-none ${activeTab === tab.id ? 'bg-white shadow-xl shadow-slate-200/50 ' + tab.color + ' font-black scale-[1.02]' : 'text-slate-500 hover:text-slate-800 hover:bg-white/50'}`}
+              className={`flex items-center gap-2.5 px-6 py-3.5 rounded-2xl whitespace-nowrap transition-all flex-1 md:flex-none ${activeTab === tab.id ? 'bg-white shadow-xl shadow-slate-200/50 ' + tab.color + ' font-black scale-[1.02]' : 'text-slate-500 hover:text-slate-800 hover:bg-white/50'}`}
             >
-              <tab.icon size={20} strokeWidth={2.5} />
+              <tab.icon size={18} strokeWidth={2.5} />
               <span className="text-sm">{tab.label}</span>
             </button>
           ))}
         </div>
 
-        {/* --- 財務總表 --- */}
+        {/* --- Tab Content: Accounting --- */}
         {activeTab === 'accounting' && (
           <div className="space-y-8 animate-in fade-in slide-in-from-top-4 duration-500">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 group hover:shadow-xl hover:shadow-emerald-100/50 transition-all duration-300">
-                <div className="flex justify-between items-start mb-4">
-                  <p className="text-slate-400 text-xs font-black uppercase tracking-widest">總收入</p>
-                  <div className="bg-emerald-50 p-2 rounded-xl text-emerald-500"><TrendingUp size={20} /></div>
-                </div>
-                <div className="text-3xl font-black text-emerald-600 tracking-tighter">${stats.income.toLocaleString()}</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Card title="總收入" value={stats.income} color="text-emerald-600" bg="bg-emerald-50" icon={TrendingUp} />
+              <Card title="總支出" value={stats.expense} color="text-rose-600" bg="bg-rose-50" icon={TrendingDown} />
+              <Card title="目前結餘" value={stats.balance} color="text-indigo-600" bg="bg-indigo-50" icon={Wallet} />
+              <Card title="待退款代墊" value={stats.pendingMyAdvance} color="text-orange-600" bg="bg-orange-50" icon={UserCheck} sub="社團應還給我的錢" />
+            </div>
+
+            <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
+              <div className="p-8 flex justify-between items-center border-b border-slate-50">
+                <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
+                  <ClipboardList className="text-indigo-500" /> 收支明細
+                </h3>
+                <button 
+                  onClick={() => setShowAddTx(true)}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-2xl flex items-center gap-2 text-sm font-bold shadow-lg shadow-indigo-100 transition-all active:scale-95"
+                >
+                  <Plus size={18} /> 新增收支
+                </button>
               </div>
-              <div className="bg-white p-8 rounded-[2.5
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="bg-slate-50/50 text-slate-400 text-[10px] uppercase font-black tracking-widest">
+                      <th className="px-8 py-4">日期</th>
+                      <th className="px-8 py-4">類型</th>
+                      <th className="px-8 py-4">分類</th>
+                      <th className="px-8 py-4">項目/備註</th>
+                      <th className="px-8 py-4 text-right">金額</th>
+                      <th className="px-8 py-4">狀態</th>
+                      <th className="px-8 py-4"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {transactions.map(tx => (
+                      <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors group">
+                        <td className="px-8 py-5 text-sm font-medium text-slate-500">{tx.date}</td>
+                        <td className="px-8 py-5">
+                          <div className="flex flex-col gap-1">
+                            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase inline-block w-fit ${tx.type === 'income' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+                              {tx.type === 'income' ? (tx.isEstimated ? '預估收入' : '收入') : '支出'}
+                            </span>
+                            {tx.isPaidByMe && (
+                              <span className="text-[9px] font-black text-orange-500 uppercase tracking-tighter flex items-center gap-1">
+                                <UserCheck size={10} /> 個人代墊
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-8 py-5 text-sm font-bold text-slate-700">{tx.category}</td>
+                        <td className="px-8 py-5 text-sm text-slate-500">{tx.note || '-'}</td>
+                        <td className={`px-8 py-5 text-sm font-black text-right ${tx.type === 'income' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                          {tx.type === 'income' ? '+' : '-'}${Number(tx.amount).toLocaleString()}
+                        </td>
+                        <td className="px-8 py-5">
+                          {tx.isPaidByMe ? (
+                            <button 
+                              onClick={() => handleToggleReimbursed(tx.id, tx.isReimbursedToMe)}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black transition-all ${tx.isReimbursedToMe ? 'bg-emerald-50 text-emerald-600' : 'bg-orange-50 text-orange-600 hover:bg-orange-100'}`}
+                            >
+                              {tx.isReimbursedToMe ? <CheckCircle size={12} /> : <AlertCircle size={12} />}
+                              {tx.isReimbursedToMe ? '社團已還我錢' : '社團尚未還我'}
+                            </button>
+                          ) : (
+                            <span className="text-[10px] text-slate-300 font-bold italic">公費支出</span>
+                          )}
+                        </td>
+                        <td className="px-8 py-5 text-right opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => handleDeleteDoc('transactions', tx.id)} className="text-slate-300 hover:text-rose-500 transition-colors">
+                            <Trash2 size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {transactions.length === 0 && (
+                      <tr>
+                        <td colSpan="7" className="px-8 py-12 text-center text-slate-400 italic">尚未有交易資料</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* --- Tab Content: Courses --- */}
+        {activeTab === 'courses' && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in slide-in-from-top-4">
+            <div className="lg:col-span-2 space-y-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-black text-slate-800">現有課程</h3>
+                <button 
+                  onClick={() => setShowAddCourse(true)}
+                  className="bg-blue-600 text-white px-5 py-2.5 rounded-2xl flex items-center gap-2 text-sm font-bold shadow-lg shadow-blue-100"
+                >
+                  <Plus size={18} /> 開設課程
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {courses.map(course => (
+                  <div 
+                    key={course.id} 
+                    onClick={() => setSelectedCourse(course)}
+                    className={`p-6 rounded-[2rem] border-2 cursor-pointer transition-all ${selectedCourse?.id === course.id ? 'border-blue-500 bg-blue-50/30 shadow-xl' : 'border-white bg-white hover:border-slate-200'}`}
+                  >
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="bg-blue-100 p-2.5 rounded-xl text-blue-600"><BookOpen size={20} /></div>
+                      <span className="text-xs font-black text-blue-600 bg-blue-50 px-3 py-1 rounded-full">${course.fee}</span>
+                    </div>
+                    <h4 className="font-black text-lg text-slate-800 mb-1">{course.name}</h4>
+                    <p className="text-sm text-slate-400 flex items-center gap-1 mb-4"><Calendar size={14}/> {course.date}</p>
+                    <div className="flex justify-between items-center">
+                      <div className="flex -space-x-2 overflow-hidden">
+                        {(course.students || []).slice(0, 3).map((s, i) => (
+                          <div key={i} className="inline-block h-8 w-8 rounded-full ring-2 ring-white bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-500">
+                            {s.name[0]}
+                          </div>
+                        ))}
+                        {(course.students || []).length > 3 && (
+                          <div className="inline-block h-8 w-8 rounded-full ring-2 ring-white bg-slate-100 flex items-center justify-center text-[10px] font-bold text-slate-400">
+                            +{(course.students || []).length - 3}
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-xs font-bold text-slate-400">{(course.students || []).length} 位學員</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8 h-fit sticky top-24">
+              {selectedCourse ? (
+                <div className="space-y-6 animate-in fade-in duration-300">
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-black text-xl text-slate-800">{selectedCourse.name}</h3>
+                    <button onClick={() => handleDeleteDoc('courses', selectedCourse.id)} className="text-slate-300 hover:text-rose-500">
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest">快速報名</p>
+                    <form onSubmit={handleRegister} className="flex gap-2">
+                      <input 
+                        className="flex-1 bg-slate-50 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500"
+                        placeholder="姓名"
+                        value={newStudent.name}
+                        onChange={e => setNewStudent({...newStudent, name: e.target.value})}
+                        required
+                      />
+                      <button className="bg-blue-600 text-white p-3 rounded-xl hover:bg-blue-700 transition-colors">
+                        <UserPlus size={18} />
+                      </button>
+                    </form>
+                  </div>
+
+                  <div className="space-y-4 pt-4">
+                    <div className="flex justify-between items-center">
+                      <p className="text-xs font-black text-slate-400 uppercase tracking-widest">學員名單</p>
+                      <span className="text-[10px] font-bold text-slate-400">已繳費: {(selectedCourse.students || []).filter(s => s.paid).length}</span>
+                    </div>
+                    <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2 no-scrollbar">
+                      {(selectedCourse.students || []).map(student => (
+                        <div key={student.id} className="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl group">
+                          <div>
+                            <p className="font-bold text-sm text-slate-700">{student.name}</p>
+                            <p className="text-[10px] text-slate-400">{student.phone || '無電話'}</p>
+                          </div>
+                          <button 
+                            onClick={() => togglePaid(selectedCourse.id, student.id)}
+                            className={`p-2 rounded-xl transition-all ${student.paid ? 'bg-emerald-100 text-emerald-600 shadow-inner' : 'bg-slate-200 text-slate-400 hover:bg-slate-300'}`}
+                          >
+                            <CheckCircle size={18} />
+                          </button>
+                        </div>
+                      ))}
+                      {(selectedCourse.students || []).length === 0 && (
+                        <div className="text-center py-12 text-slate-300">
+                          <AlertCircle className="mx-auto mb-2 opacity-20" size={32} />
+                          <p className="text-sm">尚無學員報名</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-20 animate-pulse">
+                  <BookOpen className="mx-auto mb-4 text-slate-200" size={48} />
+                  <p className="text-slate-400 font-bold">請點選左側課程查看詳情</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* --- Tab Content: Reimbursement --- */}
+        {activeTab === 'reimbursement' && (
+          <div className="space-y-8 animate-in fade-in slide-in-from-top-4 duration-500">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-2xl font-black text-slate-800">經費核銷追蹤</h3>
+                <p className="text-sm text-slate-500 font-medium">用於記錄向社團或系學會請款的進度</p>
+              </div>
+              <button 
+                onClick={() => setShowAddReimbursement(true)}
+                className="bg-rose-600 text-white px-6 py-3 rounded-2xl flex items-center gap-2 text-sm font-bold shadow-lg shadow-rose-100"
+              >
+                <Plus size={18} /> 新增核銷
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {reimbursements.map(reim => (
+                <div key={reim.id} className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm relative group overflow-hidden">
+                  <div className="absolute top-0 right-0 p-6 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => handleDeleteDoc('reimbursements', reim.id)} className="text-slate-300 hover:text-rose-500">
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-4 mb-6">
+                    <div className="bg-rose-50 p-4 rounded-2xl text-rose-500"><FileText size={24} /></div>
+                    <div>
+                      <h4 className="font-black text-slate-800 leading-tight">{reim.target}</h4>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{reim.month} 份請款</p>
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center pb-4 border-b border-slate-50">
+                      <span className="text-xs font-bold text-slate-400">核銷金額</span>
+                      <span className="text-xl font-black text-slate-800">${Number(reim.amount).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-bold text-slate-400">發票抬頭</span>
+                      <span className="text-sm font-bold text-indigo-600">{reim.invoiceOwner || '未註記'}</span>
+                    </div>
+                    <div className="p-4 bg-slate-50 rounded-2xl">
+                      <p className="text-xs text-slate-400 leading-relaxed"><span className="font-black uppercase tracking-tighter mr-2">Note:</span>{reim.note || '無備註事項'}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {reimbursements.length === 0 && (
+                <div className="col-span-full py-20 text-center bg-white rounded-[2.5rem] border-2 border-dashed border-slate-200">
+                  <ClipboardList className="mx-auto mb-4 text-slate-200" size={48} />
+                  <p className="text-slate-400 font-bold">目前沒有核銷記錄</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* --- Tab Content: Points --- */}
+        {activeTab === 'points' && (
+          <div className="space-y-8 animate-in fade-in slide-in-from-top-4 duration-500">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Leaderboard */}
+              <div className="lg:col-span-1 space-y-6">
+                <h3 className="text-xl font-black text-slate-800 flex items-center gap-2">
+                  <Medal className="text-amber-500" /> 積分排行榜
+                </h3>
+                <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
+                  <div className="p-8 space-y-6">
+                    {leaderboard.map(([team, score], idx) => (
+                      <div key={team} className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-lg ${
+                            idx === 0 ? 'bg-amber-100 text-amber-600' : 
+                            idx === 1 ? 'bg-slate-100 text-slate-500' : 
+                            'bg-orange-50 text-orange-600'
+                          }`}>
+                            {idx + 1}
+                          </div>
+                          <span className="font-black text-slate-700">{team}</span>
+                        </div>
+                        <span className="text-2xl font-black text-slate-800 tracking-tighter">{score} <span className="text-xs text-slate-400 font-bold uppercase ml-1">Pts</span></span>
+                      </div>
+                    ))}
+                    {leaderboard.length === 0 && (
+                      <div className="text-center py-10 text-slate-300 font-bold">尚無積分記錄</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* History & Action */}
+              <div className="lg:col-span-2 space-y-6">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-xl font-black text-slate-800">獲分紀錄</h3>
+                  <button 
+                    onClick={() => setShowAddPoint(true)}
+                    className="bg-amber-500 text-white px-5 py-2.5 rounded-2xl flex items-center gap-2 text-sm font-bold shadow-lg shadow-amber-100"
+                  >
+                    <Star size={18} /> 給予積分
+                  </button>
+                </div>
+
+                <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                      <thead className="bg-slate-50/50 text-slate-400 text-[10px] uppercase font-black tracking-widest">
+                        <tr>
+                          <th className="px-8 py-4">時間</th>
+                          <th className="px-8 py-4">組別</th>
+                          <th className="px-8 py-4">成員</th>
+                          <th className="px-8 py-4">原因</th>
+                          <th className="px-8 py-4 text-right">分數</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50">
+                        {points.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)).map(p => (
+                          <tr key={p.id} className="hover:bg-slate-50 transition-colors">
+                            <td className="px-8 py-5 text-sm text-slate-400 font-medium">
+                              {new Date(p.timestamp).toLocaleDateString()}
+                            </td>
+                            <td className="px-8 py-5 font-black text-slate-700">{p.team}</td>
+                            <td className="px-8 py-5 text-sm text-slate-500">{p.member || '-'}</td>
+                            <td className="px-8 py-5 text-sm text-slate-500">{p.reason}</td>
+                            <td className="px-8 py-5 font-black text-amber-600 text-right">+{p.score}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+      </main>
+
+      {/* --- Modals --- */}
+      {showAddTx && (
+        <Modal title="新增收支項目" onClose={() => setShowAddTx(false)}>
+          <form onSubmit={handleAddTx} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <button 
+                type="button" 
+                onClick={() => setNewTx({...newTx, type: 'income'})}
+                className={`p-4 rounded-2xl font-black text-sm transition-all ${newTx.type === 'income' ? 'bg-emerald-500 text-white shadow-lg' : 'bg-slate-100 text-slate-400'}`}
+              >收入</button>
+              <button 
+                type="button" 
+                onClick={() => setNewTx({...newTx, type: 'expense'})}
+                className={`p-4 rounded-2xl font-black text-sm transition-all ${newTx.type === 'expense' ? 'bg-rose-500 text-white shadow-lg' : 'bg-slate-100 text-slate-400'}`}
+              >支出</button>
+            </div>
+            <Input label="日期" type="date" value={newTx.date} onChange={e => setNewTx({...newTx, date: e.target.value})} required />
+            <Input label="金額" type="number" placeholder="請輸入金額" value={newTx.amount} onChange={e => setNewTx({...newTx, amount: e.target.value})} required />
+            <div className="space-y-1.5">
+              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">分類</label>
+              <select 
+                className="w-full bg-slate-100 border-none rounded-2xl px-5 py-4 text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none"
+                value={newTx.category}
+                onChange={e => setNewTx({...newTx, category: e.target.value})}
+              >
+                {newTx.type === 'income' ? (
+                  <>
+                    <option>社課費用</option>
+                    <option>社團補助</option>
+                    <option>期初/期末聚餐費</option>
+                    <option>其他收入</option>
+                  </>
+                ) : (
+                  <>
+                    <option>老師費用</option>
+                    <option>器材採購</option>
+                    <option>行政雜支</option>
+                    <option>場地租借</option>
+                    <option>活動補貼</option>
+                  </>
+                )}
+              </select>
+            </div>
+            <Input label="備註" placeholder="例如：第3次社課講師費" value={newTx.note} onChange={e => setNewTx({...newTx, note: e.target.value})} />
+            
+            <div className="space-y-3 p-4 bg-slate-50 rounded-2xl">
+              <div className="flex items-center gap-3">
+                <input 
+                  type="checkbox" 
+                  id="isEst"
+                  checked={newTx.isEstimated}
+                  onChange={e => setNewTx({...newTx, isEstimated: e.target.checked})}
+                  className="w-5 h-5 rounded-lg border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                <label htmlFor="isEst" className="text-sm font-bold text-slate-600">這是預估金額 (尚未入帳/支出)</label>
+              </div>
+
+              {newTx.type === 'expense' && (
+                <div className="flex items-center gap-3 pt-2 border-t border-slate-200">
+                  <input 
+                    type="checkbox" 
+                    id="isPaidByMe"
+                    checked={newTx.isPaidByMe}
+                    onChange={e => setNewTx({...newTx, isPaidByMe: e.target.checked})}
+                    className="w-5 h-5 rounded-lg border-slate-300 text-orange-500 focus:ring-orange-500"
+                  />
+                  <label htmlFor="isPaidByMe" className="text-sm font-bold text-orange-600 flex items-center gap-1">
+                    <UserCheck size={14} /> 這筆由我先行代墊
+                  </label>
+                </div>
+              )}
+            </div>
+            
+            <button className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black shadow-lg hover:bg-indigo-700 transition-all mt-6">確認送出</button>
+          </form>
+        </Modal>
+      )}
+
+      {showAddCourse && (
+        <Modal title="開設新課程" onClose={() => setShowAddCourse(false)}>
+          <form onSubmit={handleAddCourse} className="space-y-4">
+            <Input label="課程名稱" placeholder="例如：吉他基礎班" value={newCourse.name} onChange={e => setNewCourse({...newCourse, name: e.target.value})} required />
+            <Input label="開課日期" type="date" value={newCourse.date} onChange={e => setNewCourse({...newCourse, date: e.target.value})} required />
+            <Input label="報名費用" type="number" placeholder="單人費用" value={newCourse.fee} onChange={e => setNewCourse({...newCourse, fee: e.target.value})} required />
+            <Input label="課程簡介" placeholder="簡單描述課程內容..." value={newCourse.description} onChange={e => setNewCourse({...newCourse, description: e.target.value})} />
+            <button className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black shadow-lg hover:bg-blue-700 transition-all mt-6">建立課程</button>
+          </form>
+        </Modal>
+      )}
+
+      {showAddReimbursement && (
+        <Modal title="新增核銷項目" onClose={() => setShowAddReimbursement(false)}>
+          <form onSubmit={handleAddReimbursement} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <Input label="月份" placeholder="3月" value={newReimbursement.month} onChange={e => setNewReimbursement({...newReimbursement, month: e.target.value})} required />
+              <Input label="金額" type="number" placeholder="核銷金額" value={newReimbursement.amount} onChange={e => setNewReimbursement({...newReimbursement, amount: e.target.value})} required />
+            </div>
+            <Input label="請款目標" placeholder="例如：社團補助金" value={newReimbursement.target} onChange={e => setNewReimbursement({...newReimbursement, target: e.target.value})} required />
+            <Input label="發票抬頭" placeholder="天茂企管顧問有限公司" value={newReimbursement.invoiceOwner} onChange={e => setNewReimbursement({...newReimbursement, invoiceOwner: e.target.value})} />
+            <Input label="備註" placeholder="發票日期、品項等..." value={newReimbursement.note} onChange={e => setNewReimbursement({...newReimbursement, note: e.target.value})} />
+            <button className="w-full bg-rose-600 text-white py-4 rounded-2xl font-black shadow-lg hover:bg-rose-700 transition-all mt-6">儲存紀錄</button>
+          </form>
+        </Modal>
+      )}
+
+      {showAddPoint && (
+        <Modal title="積分給予" onClose={() => setShowAddPoint(false)}>
+          <form onSubmit={handleAddPoint} className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">給予組別</label>
+              <select 
+                className="w-full bg-slate-100 border-none rounded-2xl px-5 py-4 text-sm font-bold outline-none"
+                value={newPoint.team}
+                onChange={e => setNewPoint({...newPoint, team: e.target.value})}
+              >
+                <option>第一組</option>
+                <option>第二組</option>
+                <option>第三組</option>
+                <option>第四組</option>
+                <option>第五組</option>
+              </select>
+            </div>
+            <Input label="給分原因" placeholder="例如：準時出席、有問有答" value={newPoint.reason} onChange={e => setNewPoint({...newPoint, reason: e.target.value})} required />
+            <Input label="獲分成員" placeholder="若給予個人積分請填寫" value={newPoint.member} onChange={e => setNewPoint({...newPoint, member: e.target.value})} />
+            <Input label="加分點數" type="number" placeholder="5" value={newPoint.score} onChange={e => setNewPoint({...newPoint, score: e.target.value})} required />
+            <button className="w-full bg-amber-500 text-white py-4 rounded-2xl font-black shadow-lg hover:bg-amber-600 transition-all mt-6">確認加分</button>
+          </form>
+        </Modal>
+      )}
+    </div>
+  );
+}
+
+// --- Sub-components ---
+
+function Card({ title, value, color, bg, icon: Icon, sub }) {
+  return (
+    <div className={`bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 group hover:shadow-xl hover:shadow-slate-100 transition-all duration-300`}>
+      <div className="flex justify-between items-start mb-4">
+        <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">{title}</p>
+        <div className={`${bg} ${color} p-2 rounded-xl transition-transform group-hover:scale-110`}><Icon size={18} /></div>
+      </div>
+      <div className={`text-2xl font-black tracking-tighter ${color}`}>${Number(value).toLocaleString()}</div>
+      {sub && <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase">{sub}</p>}
+    </div>
+  );
+}
+
+function Modal({ title, children, onClose }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+        <div className="p-8 border-b border-slate-50 flex justify-between items-center">
+          <h2 className="text-xl font-black text-slate-800">{title}</h2>
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-xl text-slate-400"><XCircle size={24} /></button>
+        </div>
+        <div className="p-8">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Input({ label, ...props }) {
+  return (
+    <div className="space-y-1.5">
+      <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">{label}</label>
+      <input 
+        className="w-full bg-slate-100 border-none rounded-2xl px-5 py-4 text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-slate-300"
+        {...props} 
+      />
+    </div>
+  );
+}
