@@ -1,311 +1,108 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2026 社團管理系統</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- React & Babel CDN (用於在瀏覽器直接執行 JSX) -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>社團管理系統</title>
+
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- React (無 JSX) -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+  <!-- Lucide -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    body { font-family: 'Noto Sans TC', sans-serif; }
+  </style>
 </head>
-<body class="bg-[#F8FAFC]">
-    <div id="root"></div>
 
-    <!-- 加入 data-type="module" 以支援瀏覽器原生 import 語法 -->
-    <script type="text/babel" data-type="module">
-        const { useState, useEffect, useMemo } = React;
-        
-        // 從 Firebase CDN 匯入模組
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js';
-        import { getFirestore, collection, doc, addDoc, onSnapshot, updateDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js';
-        import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js';
+<body class="bg-slate-50">
+  <div id="root"></div>
 
-        // Firebase 配置 (處理環境變數不存在時的錯誤)
-        const firebaseConfig = window.__firebase_config ? JSON.parse(window.__firebase_config) : {};
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const appId = window.__app_id || 'club-manager-2026';
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 
-        // 圖示組件封裝
-        const Icon = ({ name, size = 18, className = "" }) => {
-            useEffect(() => { 
-                if (window.lucide) {
-                    window.lucide.createIcons(); 
-                }
-            }, [name]);
-            return <i data-lucide={name} style={{ width: size, height: size }} className={className}></i>;
-        };
+    const e = React.createElement;
 
-        function App() {
-            const [user, setUser] = useState(null);
-            const [activeTab, setActiveTab] = useState('accounting');
-            const [transactions, setTransactions] = useState([]);
-            const [courses, setCourses] = useState([]);
-            const [loading, setLoading] = useState(true);
+    // 🔥 你要自己填
+    const firebaseConfig = {
+      apiKey: "你的",
+      authDomain: "你的",
+      projectId: "你的",
+      storageBucket: "你的",
+      messagingSenderId: "你的",
+      appId: "你的"
+    };
 
-            // UI 狀態
-            const [showAddTx, setShowAddTx] = useState(false);
-            const [newTx, setNewTx] = useState({ 
-                type: 'expense', amount: '', category: '老師費用', note: '', 
-                date: new Date().toISOString().split('T')[0], isEstimated: false, isPaidByMe: false 
-            });
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
 
-            // 認證
-            useEffect(() => {
-                const unsubAuth = onAuthStateChanged(auth, (u) => {
-                    if (!u) {
-                        signInAnonymously(auth).catch(err => console.error("匿名登入失敗:", err));
-                    }
-                    setUser(u);
-                });
-                return () => unsubAuth();
-            }, []);
+    signInAnonymously(auth);
 
-            // 資料監聽
-            useEffect(() => {
-                if (!user) return;
-                
-                // 監聽交易紀錄
-                const unsubTx = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'transactions'), (snap) => {
-                    setTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => new Date(b.date) - new Date(a.date)));
-                    setLoading(false);
-                }, (err) => console.error("監聽交易錯誤:", err));
+    function App() {
+      const [transactions, setTransactions] = React.useState([]);
+      const [amount, setAmount] = React.useState("");
 
-                // 監聽課程資料
-                const unsubCourse = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'courses'), (snap) => {
-                    setCourses(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-                }, (err) => console.error("監聽課程錯誤:", err));
-
-                return () => { unsubTx(); unsubCourse(); };
-            }, [user]);
-
-            // 財務統計
-            const stats = useMemo(() => {
-                const income = transactions.filter(t => t.type === 'income' && !t.isEstimated).reduce((s, t) => s + Number(t.amount), 0);
-                const expense = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
-                const pendingMyAdvance = transactions
-                    .filter(t => t.type === 'expense' && t.isPaidByMe && !t.isReimbursedToMe)
-                    .reduce((s, t) => s + Number(t.amount), 0);
-                return { income, expense, balance: income - expense, pendingMyAdvance };
-            }, [transactions]);
-
-            const handleAddTx = async (e) => {
-                e.preventDefault();
-                try {
-                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'transactions'), {
-                        ...newTx, 
-                        amount: Number(newTx.amount), 
-                        isReimbursedToMe: false, 
-                        timestamp: new Date().toISOString()
-                    });
-                    setShowAddTx(false);
-                    setNewTx({ type: 'expense', amount: '', category: '老師費用', note: '', date: new Date().toISOString().split('T')[0], isEstimated: false, isPaidByMe: false });
-                } catch (err) { 
-                    console.error("新增失敗:", err);
-                    alert("儲存失敗，請檢查系統連線。");
-                }
-            };
-
-            const handleToggleReimbursed = async (id, status) => {
-                try {
-                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'transactions', id), { isReimbursedToMe: !status });
-                } catch (err) {
-                    console.error("更新失敗:", err);
-                }
-            };
-
-            if (loading && !user) return <div className="h-screen flex items-center justify-center text-slate-400 font-bold">系統初始化中...</div>;
-
-            return (
-                <div className="min-h-screen pb-24">
-                    {/* Header */}
-                    <header className="bg-white border-b sticky top-0 z-30 px-6 py-4 shadow-sm">
-                        <div className="max-w-7xl mx-auto flex justify-between items-center">
-                            <div className="flex items-center gap-3">
-                                <div className="bg-indigo-600 p-2.5 rounded-2xl shadow-lg shadow-indigo-100">
-                                    <Icon name="users" className="text-white" size={24} />
-                                </div>
-                                <div>
-                                    <h1 className="text-xl font-black text-slate-800">2026 社團管理</h1>
-                                    <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest flex items-center gap-1">
-                                        <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span> 雲端資料庫已連線
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="hidden md:block text-right border-l pl-6 border-slate-100">
-                                <p className="text-[10px] text-slate-400 font-bold uppercase">統編: 89177254</p>
-                                <p className="text-sm font-black text-slate-700">天茂企管顧問有限公司</p>
-                            </div>
-                        </div>
-                    </header>
-
-                    <main className="max-w-7xl mx-auto p-4 md:p-8">
-                        {/* 導覽 */}
-                        <div className="flex bg-slate-200/50 p-1.5 rounded-3xl mb-10 overflow-x-auto no-scrollbar shadow-inner">
-                            <button onClick={() => setActiveTab('accounting')} className={`flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl transition-all ${activeTab === 'accounting' ? 'bg-white shadow-md text-indigo-600 font-black' : 'text-slate-500 hover:bg-white/30'}`}>
-                                <Icon name="wallet" /> 財務總表
-                            </button>
-                            <button onClick={() => setActiveTab('courses')} className={`flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl transition-all ${activeTab === 'courses' ? 'bg-white shadow-md text-blue-600 font-black' : 'text-slate-500 hover:bg-white/30'}`}>
-                                <Icon name="book-open" /> 課程管理
-                            </button>
-                        </div>
-
-                        {activeTab === 'accounting' && (
-                            <div className="space-y-8 animate-in fade-in slide-in-from-top-4 duration-500">
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                                    <StatCard title="目前結餘" value={stats.balance} icon="wallet" color="text-indigo-600" bg="bg-indigo-50" />
-                                    <StatCard title="待退款代墊" value={stats.pendingMyAdvance} icon="user-check" color="text-orange-600" bg="bg-orange-50" sub="社團應還我的錢" />
-                                    <StatCard title="總收入" value={stats.income} icon="trending-up" color="text-emerald-600" bg="bg-emerald-50" />
-                                    <StatCard title="總支出" value={stats.expense} icon="trending-down" color="text-rose-600" bg="bg-rose-50" />
-                                </div>
-
-                                <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
-                                    <div className="p-8 flex justify-between items-center border-b">
-                                        <h3 className="font-black text-slate-800 flex items-center gap-2"><Icon name="list" className="text-indigo-500"/> 收支明細</h3>
-                                        <button onClick={() => setShowAddTx(true)} className="bg-indigo-600 text-white px-5 py-2.5 rounded-2xl text-sm font-bold flex items-center gap-2 shadow-lg hover:bg-indigo-700 active:scale-95 transition-all">
-                                            <Icon name="plus" /> 新增收支
-                                        </button>
-                                    </div>
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-left">
-                                            <thead className="bg-slate-50/50 text-[10px] text-slate-400 font-black uppercase tracking-widest">
-                                                <tr>
-                                                    <th className="px-8 py-4">日期</th>
-                                                    <th className="px-8 py-4">類別</th>
-                                                    <th className="px-8 py-4">項目</th>
-                                                    <th className="px-8 py-4 text-right">金額</th>
-                                                    <th className="px-8 py-4">代墊狀態</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-slate-50">
-                                                {transactions.length > 0 ? transactions.map(tx => (
-                                                    <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors group">
-                                                        <td className="px-8 py-5 text-sm text-slate-500 font-medium">{tx.date}</td>
-                                                        <td className="px-8 py-5">
-                                                            <div className="flex flex-col gap-1">
-                                                                <span className={`px-3 py-1 rounded-full text-[10px] font-black w-fit uppercase ${tx.type === 'income' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
-                                                                    {tx.type === 'income' ? '收入' : '支出'}
-                                                                </span>
-                                                                {tx.isPaidByMe && <span className="text-[9px] font-bold text-orange-500 flex items-center gap-1"><Icon name="user-check" size={10}/> 個人代墊</span>}
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-8 py-5 text-sm font-bold text-slate-700">
-                                                            {tx.category}
-                                                            {tx.note && <p className="font-normal text-slate-400 text-xs mt-0.5">{tx.note}</p>}
-                                                        </td>
-                                                        <td className={`px-8 py-5 text-sm font-black text-right ${tx.type === 'income' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                                            {tx.type === 'income' ? '+' : '-'}${Number(tx.amount).toLocaleString()}
-                                                        </td>
-                                                        <td className="px-8 py-5">
-                                                            {tx.isPaidByMe ? (
-                                                                <button 
-                                                                    onClick={() => handleToggleReimbursed(tx.id, tx.isReimbursedToMe)}
-                                                                    className={`px-3 py-1.5 rounded-xl text-[10px] font-black flex items-center gap-1 transition-all shadow-sm ${tx.isReimbursedToMe ? 'bg-emerald-50 text-emerald-600' : 'bg-orange-50 text-orange-600 hover:bg-orange-100'}`}
-                                                                >
-                                                                    <Icon name={tx.isReimbursedToMe ? "check-circle" : "alert-circle"} size={12} />
-                                                                    {tx.isReimbursedToMe ? '已退還我' : '尚未還我'}
-                                                                </button>
-                                                            ) : <span className="text-[10px] text-slate-300 italic font-medium">社團公費支出</span>}
-                                                        </td>
-                                                    </tr>
-                                                )) : (
-                                                    <tr>
-                                                        <td colSpan="5" className="px-8 py-20 text-center text-slate-400 font-medium italic">目前尚無收支紀錄</td>
-                                                    </tr>
-                                                )}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </main>
-
-                    {/* Modal: Add Transaction */}
-                    {showAddTx && (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-                            <div className="bg-white w-full max-w-md rounded-[2.5rem] p-8 shadow-2xl animate-in zoom-in-95 duration-300">
-                                <div className="flex justify-between items-center mb-6 border-b pb-4">
-                                    <h2 className="text-xl font-black text-slate-800">新增收支項目</h2>
-                                    <button onClick={() => setShowAddTx(false)} className="text-slate-300 hover:text-slate-500 transition-colors"><Icon name="x-circle" size={24}/></button>
-                                </div>
-                                <form onSubmit={handleAddTx} className="space-y-4">
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <button type="button" onClick={() => setNewTx({...newTx, type:'income'})} className={`py-3 rounded-2xl font-black transition-all ${newTx.type === 'income' ? 'bg-emerald-500 text-white shadow-lg' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}>收入</button>
-                                        <button type="button" onClick={() => setNewTx({...newTx, type:'expense'})} className={`py-3 rounded-2xl font-black transition-all ${newTx.type === 'expense' ? 'bg-rose-500 text-white shadow-lg' : 'bg-slate-100 text-slate-400 hover:bg-slate-200'}`}>支出</button>
-                                    </div>
-                                    <Input label="金額" type="number" value={newTx.amount} onChange={e => setNewTx({...newTx, amount: e.target.value})} required placeholder="輸入金額" />
-                                    <div className="space-y-1.5">
-                                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">分類</label>
-                                        <select 
-                                            value={newTx.category} 
-                                            onChange={e => setNewTx({...newTx, category: e.target.value})}
-                                            className="w-full bg-slate-100 border-none rounded-2xl px-5 py-4 text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none"
-                                        >
-                                            <option>老師費用</option>
-                                            <option>報名收入</option>
-                                            <option>器材採購</option>
-                                            <option>餐飲費</option>
-                                            <option>場地費</option>
-                                            <option>其他</option>
-                                        </select>
-                                    </div>
-                                    <Input label="備註 (選填)" value={newTx.note} onChange={e => setNewTx({...newTx, note: e.target.value})} placeholder="例如：代購弦、講師車馬費" />
-                                    {newTx.type === 'expense' && (
-                                        <div className="p-4 bg-orange-50 rounded-2xl flex items-center gap-3 border border-orange-100">
-                                            <input 
-                                                type="checkbox" 
-                                                id="payMe" 
-                                                checked={newTx.isPaidByMe} 
-                                                onChange={e => setNewTx({...newTx, isPaidByMe: e.target.checked})} 
-                                                className="w-5 h-5 rounded border-slate-300 text-orange-500 focus:ring-orange-500 cursor-pointer" 
-                                            />
-                                            <label htmlFor="payMe" className="text-sm font-bold text-orange-700 cursor-pointer">
-                                                這筆由我先行代墊 <span className="block text-[10px] font-normal text-orange-500">(系統將追蹤社團欠妳的款項)</span>
-                                            </label>
-                                        </div>
-                                    )}
-                                    <button className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black mt-4 hover:bg-indigo-700 shadow-lg active:scale-95 transition-all">確認送出並儲存</button>
-                                </form>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            );
-        }
-
-        const StatCard = ({ title, value, icon, color, bg, sub }) => (
-            <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 group hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300">
-                <div className="flex justify-between items-start mb-4">
-                    <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">{title}</p>
-                    <div className={`${bg} ${color} p-2 rounded-xl group-hover:scale-110 transition-transform`}><Icon name={icon} /></div>
-                </div>
-                <div className={`text-2xl font-black tracking-tighter ${color}`}>${Number(value).toLocaleString()}</div>
-                {sub && <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-tighter">{sub}</p>}
-            </div>
+      React.useEffect(() => {
+        const unsub = onSnapshot(
+          collection(db, "transactions"),
+          snap => {
+            const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            setTransactions(data);
+          }
         );
+        return () => unsub();
+      }, []);
 
-        const Input = ({ label, ...props }) => (
-            <div className="space-y-1.5">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">{label}</label>
-                <input className="w-full bg-slate-100 border-none rounded-2xl px-5 py-4 text-sm font-bold focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-slate-300" {...props} />
-            </div>
-        );
+      async function add() {
+        if (!amount) return;
+        await addDoc(collection(db, "transactions"), {
+          amount: Number(amount),
+          date: new Date().toISOString()
+        });
+        setAmount("");
+      }
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
+      React.useEffect(() => {
+        if (window.lucide) window.lucide.createIcons();
+      });
+
+      return e("div", { className: "p-6 max-w-xl mx-auto" },
+
+        e("h1", { className: "text-2xl font-bold mb-4" }, "社團收支"),
+
+        e("div", { className: "flex gap-2 mb-4" },
+          e("input", {
+            value: amount,
+            onChange: ev => setAmount(ev.target.value),
+            className: "border p-2 flex-1 rounded",
+            placeholder: "金額"
+          }),
+          e("button", {
+            onClick: add,
+            className: "bg-indigo-600 text-white px-4 rounded"
+          }, "新增")
+        ),
+
+        e("ul", {},
+          transactions.map(tx =>
+            e("li", {
+              key: tx.id,
+              className: "border-b py-2"
+            }, "$" + tx.amount)
+          )
+        )
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(e(App));
+  </script>
 </body>
 </html>
