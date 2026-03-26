@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>社團財務與管理系統</title>
+    <title>社團管理系統</title>
     
     <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -36,6 +36,12 @@
       window.firebaseApi = { doc, onSnapshot, setDoc };
       window.dispatchEvent(new Event('firebase-ready'));
     </script>
+    
+    <style>
+        /* 隱藏水平捲動軸但保留滑動功能 */
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans">
     
@@ -115,32 +121,8 @@
 
         const defaultData = generateDefaultData();
 
-        // --- Gemini API 整合 ---
-        const callGeminiAPI = async (prompt) => {
-          const apiKey = ""; 
-          const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-          const payload = { contents: [{ parts: [{ text: prompt }] }] };
-          const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-          const backoff = [1000, 2000, 4000, 8000, 16000];
-
-          for (let i = 0; i < backoff.length; i++) {
-              try {
-                  const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                  const result = await response.json();
-                  return result.candidates?.[0]?.content?.parts?.[0]?.text || "無法生成回應";
-              } catch (error) {
-                  if (i === backoff.length - 1) throw new Error("API呼叫失敗，請稍後再試。");
-                  await sleep(backoff[i]);
-              }
-          }
-        };
-
         // --- 元件：財務總表 ---
         const FinanceTab = ({ data, isEditing, setData }) => {
-          const [aiAnalysis, setAiAnalysis] = useState("");
-          const [isAnalyzing, setIsAnalyzing] = useState(false);
-
           const totalExpense = data.finance.expenses.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
           const totalIncome = data.finance.income.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
           const balance = totalIncome + totalExpense;
@@ -195,45 +177,12 @@
             : <span className={textClass}>{Number(val).toLocaleString()}</span>
           );
 
-          const handleGenerateAnalysis = async () => {
-            setIsAnalyzing(true);
-            setAiAnalysis("");
-            try {
-              const prompt = `身為一個社團財務顧問，請根據以下社團目前的財務狀況給出一段大約50字的繁體中文簡短分析與鼓勵或警告：
-              總收入：${totalIncome}元
-              總支出：${totalExpense}元
-              目前結餘：${balance}元
-              大跳社支出：${daTiaoExpense}元
-              歐豆K社支出：${ouDouKExpense}元
-              語氣一邊酸酸臭臭一邊給專業建議，尖酸刻薄的會計行政那種。`;
-              const result = await callGeminiAPI(prompt);
-              setAiAnalysis(result);
-            } catch (error) {
-              setAiAnalysis("⚠️ 抱歉，目前無法產生分析，請稍後再試。");
-            }
-            setIsAnalyzing(false);
-          };
-
           return (
             <div className="space-y-8 animate-in fade-in duration-300">
               <div>
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-bold text-slate-700 flex items-center gap-2">
-                    <Briefcase size={22} className="text-blue-600"/> 社團營運帳戶
-                  </h3>
-                  <button onClick={handleGenerateAnalysis} disabled={isAnalyzing} className="bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md transition-all flex items-center gap-2 disabled:opacity-50">
-                    {isAnalyzing ? <span className="animate-spin">⌛</span> : <span>✨</span>} 
-                    {isAnalyzing ? '分析中...' : 'AI 財務分析'}
-                  </button>
-                </div>
-                
-                {aiAnalysis && (
-                  <div className="bg-indigo-50 border border-indigo-200 p-4 rounded-xl mb-4 text-sm text-indigo-900 shadow-sm animate-in slide-in-from-top-2">
-                    <strong className="flex items-center gap-2 mb-1"><Star size={16} className="text-indigo-600"/> 財務顧問洞察：</strong>
-                    <p className="leading-relaxed">{aiAnalysis}</p>
-                  </div>
-                )}
-
+                <h3 className="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2">
+                  <Briefcase size={22} className="text-blue-600"/> 社團營運帳戶
+                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-3">
                     <div className="flex items-center gap-4">
@@ -256,7 +205,7 @@
 
               <div>
                 <h3 className="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2">
-                  <UserIcon size={22} className="text-amber-600"/> 個人帳務管理
+                  <UserIcon size={22} className="text-amber-600"/> 個人帳務管理 (對帳專用)
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="bg-white p-6 rounded-xl border border-amber-200 bg-amber-50/30 shadow-sm flex items-center gap-4">
@@ -276,7 +225,7 @@
                     <h3 className="font-bold text-slate-800 flex items-center gap-2">支出明細</h3>
                   </div>
                   <div className="overflow-x-auto p-4 flex-grow">
-                    <table className="w-full text-sm text-left">
+                    <table className="w-full text-sm text-left min-w-[600px]">
                       <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b">
                         <tr>
                           <th className="px-4 py-3">社團</th>
@@ -315,7 +264,7 @@
                     <h3 className="font-bold text-slate-800 flex items-center gap-2">收入明細</h3>
                   </div>
                   <div className="overflow-x-auto p-4 flex-grow">
-                    <table className="w-full text-sm text-left">
+                    <table className="w-full text-sm text-left min-w-[600px]">
                       <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b">
                         <tr>
                           <th className="px-4 py-3">社團</th>
@@ -435,7 +384,7 @@
                 </div>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left">
+                <table className="w-full text-sm text-left min-w-[800px]">
                   <thead className="text-xs text-slate-500 bg-slate-100 border-b border-slate-200">
                     <tr>
                       <th className="px-6 py-4 font-semibold w-16 text-center">#</th>
@@ -560,12 +509,13 @@
                 {isEditing && <span className="text-xs bg-amber-100 text-amber-700 px-3 py-1 rounded-full font-medium">提示：打勾報名時，系統會自動帶入該課程設定的預設費用。</span>}
               </div>
               <div className="overflow-x-auto max-h-[75vh]">
-                <table className="w-full text-sm text-left whitespace-nowrap">
+                <table className="w-full text-sm text-left whitespace-nowrap min-w-max">
                   <thead className="text-xs text-slate-500 bg-slate-100 border-b border-slate-200 sticky top-0 z-20">
                     <tr>
-                      <th className="px-4 py-4 font-semibold sticky left-0 bg-slate-100 z-30 border-r border-slate-200 w-12 text-center">#</th>
-                      <th className="px-4 py-4 font-semibold sticky left-[48px] bg-slate-100 z-30 border-r border-slate-200 w-24">名單</th>
-                      <th className="px-4 py-4 font-semibold sticky left-[144px] bg-slate-100 z-30 border-r border-slate-200 w-20 text-center">身分</th>
+                      {/* RWD Fix: 使用 inline style 強制設定欄位寬度，避免在手機上被擠壓導致 left 位置跑掉 */}
+                      <th style={{ width: '48px', minWidth: '48px', left: '0px' }} className="px-2 py-4 font-semibold sticky bg-slate-100 z-30 border-r border-slate-200 text-center">#</th>
+                      <th style={{ width: '96px', minWidth: '96px', left: '48px' }} className="px-2 py-4 font-semibold sticky bg-slate-100 z-30 border-r border-slate-200">名單</th>
+                      <th style={{ width: '80px', minWidth: '80px', left: '144px' }} className="px-2 py-4 font-semibold sticky bg-slate-100 z-30 border-r border-slate-200 text-center">身分</th>
                       {data.course.columns.map(col => (
                         <th key={col.id} className="px-2 py-2 font-semibold text-center bg-blue-50 border-r border-slate-200 min-w-[90px] align-top">
                           <div className="mb-1">{col.name.split(' ').map((line, i) => <div key={i}>{line}</div>)}</div>
@@ -592,9 +542,9 @@
                   <tbody className="divide-y divide-slate-100">
                     {data.course.members.map((member, idx) => (
                       <tr key={member.id || idx} className="hover:bg-slate-50 transition-colors">
-                        <td className="px-4 py-3 text-center text-slate-400 sticky left-0 bg-white group-hover:bg-slate-50 border-r border-slate-100">{idx + 1}</td>
-                        <td className="px-4 py-3 sticky left-[48px] bg-white group-hover:bg-slate-50 border-r border-slate-100 font-medium text-slate-800">{member.name || '-'}</td>
-                        <td className="px-4 py-3 sticky left-[144px] bg-white group-hover:bg-slate-50 border-r border-slate-100 text-center">
+                        <td style={{ width: '48px', minWidth: '48px', left: '0px' }} className="px-2 py-3 text-center text-slate-400 sticky bg-white group-hover:bg-slate-50 border-r border-slate-100 z-10">{idx + 1}</td>
+                        <td style={{ width: '96px', minWidth: '96px', left: '48px' }} className="px-2 py-3 sticky bg-white group-hover:bg-slate-50 border-r border-slate-100 font-medium text-slate-800 z-10 truncate">{member.name || '-'}</td>
+                        <td style={{ width: '80px', minWidth: '80px', left: '144px' }} className="px-2 py-3 sticky bg-white group-hover:bg-slate-50 border-r border-slate-100 text-center z-10">
                             <span className={`px-2 py-1 rounded text-[10px] font-semibold tracking-wider ${member.type === '非社員' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>{member.type || '社員'}</span>
                         </td>
                         {data.course.columns.map(col => {
@@ -634,7 +584,7 @@
                   </tbody>
                   <tfoot className="bg-slate-50 border-t-2 border-slate-200 font-semibold text-slate-800 sticky bottom-0 z-20">
                     <tr>
-                      <td colSpan="3" className="px-4 py-4 text-right sticky left-0 bg-slate-50 border-r border-slate-200 shadow-[2px_0_5px_rgba(0,0,0,0.02)]">總計收費：</td>
+                      <td colSpan="3" style={{ left: '0px' }} className="px-4 py-4 text-right sticky bg-slate-50 border-r border-slate-200 shadow-[2px_0_5px_rgba(0,0,0,0.02)] z-10">總計收費：</td>
                       {data.course.columns.map(col => (
                         <td key={`total-${col.id}`} className="px-4 py-4 text-center text-blue-700 border-r border-slate-200">${totals[col.id].toLocaleString()}</td>
                       ))}
@@ -700,7 +650,7 @@
                       </div>
                       <div className="flex-1 overflow-x-auto">
                           {(hasItems || isEditing) ? (
-                              <table className="w-full text-sm text-left">
+                              <table className="w-full text-sm text-left min-w-[400px]">
                                   <thead className="text-xs text-slate-500 bg-slate-50 border-b">
                                       <tr>
                                           <th className="px-4 py-2 w-10 text-center">#</th>
@@ -782,9 +732,6 @@
         };
 
         const CompetitionTab = ({ data, isEditing, setData }) => {
-          const [aiIdeas, setAiIdeas] = useState({ daTiao: "", ouDouK: "" });
-          const [isGeneratingIdeas, setIsGeneratingIdeas] = useState({ daTiao: false, ouDouK: false });
-
           const getNewMemberScore = (count) => count >= 11 ? 4 : count >= 7 ? 3 : count >= 4 ? 2 : count >= 1 ? 1 : 0;
           const getActivityScore = (count) => count >= 7 ? 4 : count >= 5 ? 3 : count >= 3 ? 2 : count >= 1 ? 1 : 0;
           const getPostScore = (count) => count >= 16 ? 4 : count >= 11 ? 3 : count >= 6 ? 2 : count >= 1 ? 1 : 0;
@@ -808,20 +755,6 @@
               newData.competition[club].posts[idx][field] = value;
               setData(newData);
           };
-
-          const generateIdeas = async (clubKey, clubName) => {
-              setIsGeneratingIdeas(prev => ({ ...prev, [clubKey]: true }));
-              setAiIdeas(prev => ({ ...prev, [clubKey]: "" }));
-              try {
-                  const prompt = `我們是公司的社團『${clubName}』。請發揮創意，給我們一段"要大家報名課程"招生貼文靈感。請用繁體中文，語氣活潑、以希望公司同仁活絡筋骨為方向，並使用適當的emoji，總長度不要超過100字。`;
-                  const result = await callGeminiAPI(prompt);
-                  setAiIdeas(prev => ({ ...prev, [clubKey]: result }));
-              } catch (error) {
-                  setAiIdeas(prev => ({ ...prev, [clubKey]: "⚠️ 生成失敗，請稍後再試。" }));
-              }
-              setIsGeneratingIdeas(prev => ({ ...prev, [clubKey]: false }));
-          };
-
           const renderClubPanel = (clubKey, clubName, headerColor, iconColor) => {
               const clubData = data.competition[clubKey];
               const membersCount = clubData.newMembers || 0;
@@ -856,22 +789,8 @@
                                   <div className="flex items-center gap-2"><h4 className="font-bold text-slate-700">平台發文日誌</h4><span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">共 {postsCount} 篇</span></div>
                                   <span className={`text-lg font-bold ${getPostScore(postsCount) > 0 ? iconColor : 'text-slate-300'}`}>+{getPostScore(postsCount)}</span>
                               </div>
-                              
-                              {/* AI 貼文靈感區塊 */}
-                              <div className="mb-3">
-                                  <button onClick={() => generateIdeas(clubKey, clubName)} disabled={isGeneratingIdeas[clubKey]} className="w-full py-2 bg-gradient-to-r from-pink-500 to-orange-400 hover:from-pink-600 hover:to-orange-500 text-white rounded-lg text-xs font-bold shadow-sm transition-all flex justify-center items-center gap-2 disabled:opacity-50">
-                                      {isGeneratingIdeas[clubKey] ? <span className="animate-spin">⌛</span> : <span>✨</span>}
-                                      {isGeneratingIdeas[clubKey] ? '腦力激盪中...' : 'AI 產生貼文靈感'}
-                                  </button>
-                                  {aiIdeas[clubKey] && (
-                                      <div className="mt-2 p-3 bg-orange-50 border border-orange-200 rounded-lg text-xs text-orange-900 whitespace-pre-wrap leading-relaxed animate-in fade-in">
-                                          {aiIdeas[clubKey]}
-                                      </div>
-                                  )}
-                              </div>
-
-                              <div className="border border-slate-200 rounded-lg overflow-hidden">
-                                  <table className="w-full text-sm text-left">
+                              <div className="border border-slate-200 rounded-lg overflow-x-auto">
+                                  <table className="w-full text-sm text-left min-w-[400px]">
                                       <thead className="text-xs text-slate-500 bg-slate-50 border-b"><tr><th className="px-4 py-2 w-10 text-center">#</th><th className="px-4 py-2 w-32">日期</th><th className="px-4 py-2">主題</th>{isEditing && <th className="px-2 py-2 w-10"></th>}</tr></thead>
                                       <tbody className="divide-y divide-slate-100">
                                           {clubData.posts && clubData.posts.map((post, idx) => (
@@ -924,7 +843,7 @@
         };
 
         const TabButton = ({ active, icon: Icon, label, onClick }) => (
-          <button onClick={onClick} className={`flex items-center gap-2 px-6 py-4 font-medium transition-colors border-b-2 whitespace-nowrap ${active ? 'border-blue-600 text-blue-600 bg-blue-50/50' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}><Icon size={18} /> {label}</button>
+          <button onClick={onClick} className={`flex items-center gap-2 px-4 py-3 sm:px-6 sm:py-4 text-xs sm:text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${active ? 'border-blue-600 text-blue-600 bg-blue-50/50' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}><Icon size={18} className="hidden sm:block" /> {label}</button>
         );
 
         const App = () => {
@@ -989,12 +908,12 @@
           if (!data) return <div className="min-h-screen flex flex-col items-center justify-center text-slate-500"><Cloud size={48} className="animate-pulse text-blue-500 mb-4" /><p>正在連線至 Firebase 資料庫...</p></div>;
 
           return (
-            <div className="min-h-screen bg-slate-50 p-4 md:p-8 pb-24">
-              <div className="max-w-7xl mx-auto space-y-6">
-                <header className="flex justify-between items-end gap-4 pb-6 border-b">
-                  <div><h1 className="text-2xl font-bold text-slate-900">社團財務與管理系統</h1><p className="text-xs text-slate-500">社員名單已重設為空白，請手動新增</p></div>
+            <div className="min-h-screen bg-slate-50 p-2 sm:p-4 md:p-8 pb-24">
+              <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
+                <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 sm:pb-6 border-b">
+                  <div><h1 className="text-xl sm:text-2xl font-bold text-slate-900">一起大跳社&歐豆Ｋ社管理系統</h1><p className="text-[10px] sm:text-xs text-slate-500 mt-1">一起大跳社：Abby、品in；歐豆Ｋ社：品in、廷柔</p></div>
                   <div className="flex gap-3">
-                    {isEditing ? <button onClick={handleSave} disabled={isSaving} className="bg-blue-600 text-white px-4 py-2 rounded text-sm">{isSaving ? '儲存中...' : '儲存變更'}</button> : <button onClick={() => setIsEditing(true)} className="bg-white border px-4 py-2 rounded text-sm">編輯資料</button>}
+                    {isEditing ? <button onClick={handleSave} disabled={isSaving} className="bg-blue-600 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded text-xs sm:text-sm">{isSaving ? '儲存中...' : '儲存變更'}</button> : <button onClick={() => setIsEditing(true)} className="bg-white border px-3 py-1.5 sm:px-4 sm:py-2 rounded text-xs sm:text-sm">編輯資料</button>}
                   </div>
                 </header>
                 <nav className="flex overflow-x-auto bg-white rounded-xl border shadow-sm hide-scrollbar">
