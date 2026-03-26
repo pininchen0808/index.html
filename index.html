@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>一起大跳社 & 歐豆K社</title>
+    <title>社團財務與管理系統</title>
     
     <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -79,11 +79,11 @@
               monthsData.push({
                 id: 3, name: '3月', 
                 daTiao: { purpose: '社團補助金', budget: 2000, items: [
-                  { category: '大跳發票', amount: 1000, payer: '品in' },
+                  { category: '大跳發票', amount: 1000, payer: '品印' },
                   { category: '大跳發票', amount: 92, payer: '廷柔' }
                 ]},
                 ouDouK: { purpose: '社團補助金', budget: 2000, items: [
-                  { category: '歐豆K發票', amount: 1024, payer: '品in' }
+                  { category: '歐豆K發票', amount: 1024, payer: '品印' }
                 ]}
               });
             } else {
@@ -121,7 +121,7 @@
                 { id: 'c10', name: '12/1 K-POP', memberPrice: 150, nonMemberPrice: 400 }
               ],
               members: [
-                { id: 'm1', name: '品in', type: '社員', registered: { c1: true, c2: true }, payments: { c1: 150, c2: 280 } },
+                { id: 'm1', name: '品印', type: '社員', registered: { c1: true, c2: true }, payments: { c1: 150, c2: 280 } },
                 { id: 'm2', name: 'Abby', type: '社員', registered: { c1: true, c2: true }, payments: { c1: 150, c2: 280 } },
                 { id: 'm3', name: '益蟲', type: '社員', registered: {}, payments: {} },
                 { id: 'm4', name: '廷柔', type: '社員', registered: {}, payments: {} },
@@ -144,7 +144,7 @@
                 { id: 'm21', name: '銘樺', type: '社員', registered: {}, payments: {} },
                 { id: 'm22', name: '庭豪', type: '社員', registered: {}, payments: {} },
                 { id: 'm23', name: '文彬', type: '社員', registered: {}, payments: {} },
-                { id: 'm24', name: '品in朋友', type: '非社員', registered: { c2: true }, payments: { c2: 400 } }
+                { id: 'm24', name: '品印朋友', type: '非社員', registered: { c2: true }, payments: { c2: 400 } }
               ]
             },
             invoice: {
@@ -260,7 +260,7 @@
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="bg-white p-6 rounded-xl border border-amber-200 bg-amber-50/30 shadow-sm flex items-center gap-4">
                     <div className="p-3 bg-amber-100 text-amber-600 rounded-lg"><Wallet size={24} /></div>
-                    <div><p className="text-sm text-amber-700 font-medium">品in代墊總計 (需回收)</p><p className="text-2xl font-bold text-amber-900">${pinYinTotal.toLocaleString()}</p></div>
+                    <div><p className="text-sm text-amber-700 font-medium">品印代墊總計 (需回收)</p><p className="text-2xl font-bold text-amber-900">${pinYinTotal.toLocaleString()}</p></div>
                   </div>
                   <div className="bg-white p-6 rounded-xl border border-blue-200 bg-blue-50/30 shadow-sm flex items-center gap-4">
                     <div className="p-3 bg-blue-100 text-blue-600 rounded-lg"><Clock size={24} /></div>
@@ -285,7 +285,7 @@
                           <th className="px-4 py-3 w-1/4">類別</th>
                           <th className="px-4 py-3 w-1/3">項目</th>
                           <th className="px-4 py-3 text-right">金額</th>
-                          <th className="px-4 py-3 w-20 text-center">品in代墊</th>
+                          <th className="px-4 py-3 w-20 text-center">品印代墊</th>
                           <th className="px-4 py-3">備註</th>
                           {isEditing && <th className="px-2 py-3 w-10"></th>}
                         </tr>
@@ -1143,27 +1143,8 @@
                       needsUpdate = true;
                   }
 
-                  // 3.5 自動修復：名稱更新 (品印 -> 品in) 以防舊資料不匹配
-                  if (mergedData.course?.members) {
-                      mergedData.course.members.forEach(m => {
-                          if (m.name === '品印') { m.name = '品in'; needsUpdate = true; }
-                          if (m.name === '品印朋友') { m.name = '品in朋友'; needsUpdate = true; }
-                      });
-                  }
-                  if (mergedData.invoice?.months) {
-                      mergedData.invoice.months.forEach(m => {
-                          ['daTiao', 'ouDouK'].forEach(club => {
-                              if (m[club]?.items) {
-                                  m[club].items.forEach(item => {
-                                      if (item.payer === '品印') { item.payer = '品in'; needsUpdate = true; }
-                                  });
-                              }
-                          });
-                      });
-                  }
-
                   // 4. 自動補齊完整的 23 人社團名單
-                  const fullMemberNames = ["品in", "Abby", "益蟲", "廷柔", "育綸", "珮綺", "弘霖", "Yoyo", "Adele", "佳雯", "冠煒", "葳杉", "彥廷", "敬翰", "冠廷", "小每", "衣淇", "Amanda", "宣穎", "若瑄", "銘樺", "庭豪", "文彬", "品in朋友"];
+                  const fullMemberNames = ["品印", "Abby", "益蟲", "廷柔", "育綸", "珮綺", "弘霖", "Yoyo", "Adele", "佳雯", "冠煒", "葳杉", "彥廷", "敬翰", "冠廷", "小每", "衣淇", "Amanda", "宣穎", "若瑄", "銘樺", "庭豪", "文彬", "品印朋友"];
                   if (mergedData.course && mergedData.course.members) {
                       const existingNames = mergedData.course.members.map(m => m.name);
                       fullMemberNames.forEach((name, idx) => {
@@ -1241,28 +1222,8 @@
                 
                 <header className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 pb-6 border-b border-slate-200">
                   <div>
-                    <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-3">
-                      一起大跳社 <span className="text-slate-400 font-medium px-1">&</span> 歐豆K社
-                    </h1>
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      {/* 大跳社幹部卡片 */}
-                      <div className="flex items-center bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 shadow-sm gap-3">
-                        <span className="text-blue-800 bg-white px-2 py-1 rounded shadow-sm border border-blue-100 font-bold text-sm">一起大跳社</span>
-                        <div className="flex gap-3 text-xs text-blue-700 items-center">
-                          <span className="flex items-center gap-1.5"><span className="bg-white px-1.5 py-0.5 rounded shadow-sm border border-blue-100 font-bold">社長</span> Abby</span>
-                          <span className="flex items-center gap-1.5"><span className="bg-white px-1.5 py-0.5 rounded shadow-sm border border-blue-100 font-bold">副社長</span> 品in</span>
-                        </div>
-                      </div>
-                      
-                      {/* 歐豆K社幹部卡片 */}
-                      <div className="flex items-center bg-purple-50 border border-purple-200 rounded-lg px-3 py-2 shadow-sm gap-3">
-                        <span className="text-purple-800 bg-white px-2 py-1 rounded shadow-sm border border-purple-100 font-bold text-sm">歐豆K社</span>
-                        <div className="flex gap-3 text-xs text-purple-700 items-center">
-                          <span className="flex items-center gap-1.5"><span className="bg-white px-1.5 py-0.5 rounded shadow-sm border border-purple-100 font-bold">社長</span> 品in</span>
-                          <span className="flex items-center gap-1.5"><span className="bg-white px-1.5 py-0.5 rounded shadow-sm border border-purple-100 font-bold">副社長</span> 廷柔</span>
-                        </div>
-                      </div>
-                    </div>
+                    <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">社團財務與管理系統</h1>
+                    <p className="text-slate-500 mt-2">統整財務報表、社員名單、經費核銷與積分統計</p>
                   </div>
                   <div className="flex flex-wrap items-center gap-3">
                     <div className="flex items-center gap-2 text-sm text-slate-500 bg-white px-3 py-2 rounded-lg border border-slate-200 shadow-sm">
