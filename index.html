@@ -62,6 +62,10 @@
         const ChevronDown = (p) => <Icon {...p} path='<polyline points="6 9 12 15 18 9"></polyline>' />;
         const ChevronUp = (p) => <Icon {...p} path='<polyline points="18 15 12 9 6 15"></polyline>' />;
         const ReceiptIcon = (p) => <Icon {...p} path='<path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1Z"/><path d="M16 8h-6"/><path d="M16 12h-8"/><path d="M16 16h-8"/>' />;
+        const Wallet = (p) => <Icon {...p} path='<path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/>' />;
+        const Clock = (p) => <Icon {...p} path='<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>' />;
+        const Briefcase = (p) => <Icon {...p} path='<rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>' />;
+        const UserIcon = (p) => <Icon {...p} path='<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>' />;
 
         // --- 預設資料生成 (包含所有課程與3~12月核銷) ---
         const generateDefaultData = () => {
@@ -82,13 +86,13 @@
           return {
             finance: {
               expenses: [
-                { category: '老師費用', item: 'CaRu課費 第一堂15人', amount: -6000, note: '' },
-                { category: '老師費用', item: '阿默課費 預計', amount: -27000, note: '3000元*9堂' },
-                { category: '場地租金', item: '3/11-Sooo dance A教室', amount: -900, note: '代墊' }
+                { category: '老師費用', item: 'CaRu課費 第一堂15人', amount: -6000, note: '', isPinYinPaid: false },
+                { category: '老師費用', item: '阿默課費 預計', amount: -27000, note: '3000元*9堂', isPinYinPaid: false },
+                { category: '場地租金', item: '3/11-Sooo dance A教室', amount: -900, note: '代墊', isPinYinPaid: true }
               ],
               income: [
-                { category: '課費', item: '預計課費', amount: 23120, note: '9堂10人收280' },
-                { category: '福委補助款', item: '福委固定補助金', amount: 8000, note: '' }
+                { category: '課費', item: '預計課費', amount: 23120, note: '9堂10人收280', isReceived: false },
+                { category: '福委補助款', item: '福委固定補助金', amount: 8000, note: '', isReceived: true }
               ]
             },
             course: {
@@ -119,6 +123,16 @@
           const totalExpense = data.finance.expenses.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
           const totalIncome = data.finance.income.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
           const balance = totalIncome + totalExpense;
+          
+          // 計算品印代墊總計 (取絕對值以正數表示欠款)
+          const pinYinTotal = Math.abs(data.finance.expenses
+            .filter(item => item.isPinYinPaid)
+            .reduce((sum, item) => sum + (Number(item.amount) || 0), 0));
+
+          // 計算尚未收到款項 (待收帳款) 總計
+          const pendingReceiptTotal = data.finance.income
+            .filter(item => !item.isReceived)
+            .reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
 
           const handleChange = (type, index, field, value) => {
             const newData = { ...data };
@@ -128,7 +142,11 @@
 
           const addRow = (type) => {
             const newData = { ...data };
-            newData.finance[type].push({ category: '', item: '', amount: 0, note: '' });
+            if (type === 'expenses') {
+                newData.finance.expenses.push({ category: '', item: '', amount: 0, note: '', isPinYinPaid: false });
+            } else {
+                newData.finance.income.push({ category: '', item: '', amount: 0, note: '', isReceived: false });
+            }
             setData(newData);
           };
 
@@ -152,71 +170,156 @@
             : <span className={textClass}>{Number(val).toLocaleString()}</span>
           );
 
-          const renderTable = (type, title, titleColor, items) => (
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full">
-              <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
-                <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                  <span className={`w-2 h-2 rounded-full ${titleColor}`}></span>{title}
-                </h3>
-              </div>
-              <div className="overflow-x-auto p-4 flex-grow">
-                <table className="w-full text-sm text-left">
-                  <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b">
-                    <tr>
-                      <th className="px-4 py-3 w-1/4">類別</th>
-                      <th className="px-4 py-3 w-1/3">項目</th>
-                      <th className="px-4 py-3 text-right">金額</th>
-                      <th className="px-4 py-3">備註</th>
-                      {isEditing && <th className="px-2 py-3 w-10"></th>}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {items.map((item, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50">
-                        <td className="px-4 py-2"><Input val={item.category} field="category" index={idx} type={type}/></td>
-                        <td className="px-4 py-2"><Input val={item.item} field="item" index={idx} type={type}/></td>
-                        <td className="px-4 py-2 text-right font-medium">
-                          <NumberInput val={item.amount} field="amount" index={idx} type={type} textClass={type === 'expenses' ? 'text-red-600' : 'text-green-600'}/>
-                        </td>
-                        <td className="px-4 py-2 text-slate-500 text-xs"><Input val={item.note} field="note" index={idx} type={type}/></td>
-                        {isEditing && (
-                          <td className="px-2 py-2 text-center">
-                            <button onClick={() => removeRow(type, idx)} className="text-red-400 hover:text-red-600"><Trash2 size={16}/></button>
-                          </td>
-                        )}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {isEditing && (
-                  <button onClick={() => addRow(type)} className="w-full mt-3 py-2 border-2 border-dashed border-slate-300 text-slate-500 hover:border-blue-500 hover:text-blue-500 rounded-lg flex justify-center items-center gap-2 transition-colors">
-                    <Plus size={16} /> 新增列
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-
           return (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
-                  <div className="p-3 bg-red-100 text-red-600 rounded-lg"><TrendingDown size={24} /></div>
-                  <div><p className="text-sm text-slate-500 font-medium">總計支出</p><p className="text-2xl font-bold text-slate-800">{totalExpense.toLocaleString()}</p></div>
+            <div className="space-y-8">
+              {/* 區塊 1：社團營運總覽 */}
+              <div>
+                <h3 className="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2">
+                  <Briefcase size={22} className="text-blue-600"/> 社團營運帳戶
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+                    <div className="p-3 bg-red-100 text-red-600 rounded-lg"><TrendingDown size={24} /></div>
+                    <div><p className="text-sm text-slate-500 font-medium">總計支出</p><p className="text-2xl font-bold text-slate-800">{totalExpense.toLocaleString()}</p></div>
+                  </div>
+                  <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+                    <div className="p-3 bg-green-100 text-green-600 rounded-lg"><TrendingUp size={24} /></div>
+                    <div><p className="text-sm text-slate-500 font-medium">總計收入</p><p className="text-2xl font-bold text-slate-800">{totalIncome.toLocaleString()}</p></div>
+                  </div>
+                  <div className={`p-6 rounded-xl border shadow-sm flex items-center gap-4 ${balance < 0 ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
+                    <div className={`p-3 rounded-lg ${balance < 0 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}><Calculator size={24} /></div>
+                    <div><p className={`text-sm font-medium ${balance < 0 ? 'text-red-600/80' : 'text-green-600/80'}`}>目前結餘</p><p className={`text-2xl font-bold ${balance < 0 ? 'text-red-700' : 'text-green-700'}`}>{balance.toLocaleString()}</p></div>
+                  </div>
                 </div>
-                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
-                  <div className="p-3 bg-green-100 text-green-600 rounded-lg"><TrendingUp size={24} /></div>
-                  <div><p className="text-sm text-slate-500 font-medium">總計收入</p><p className="text-2xl font-bold text-slate-800">{totalIncome.toLocaleString()}</p></div>
-                </div>
-                <div className={`p-6 rounded-xl border shadow-sm flex items-center gap-4 ${balance < 0 ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
-                  <div className={`p-3 rounded-lg ${balance < 0 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}><Calculator size={24} /></div>
-                  <div><p className={`text-sm font-medium ${balance < 0 ? 'text-red-600/80' : 'text-green-600/80'}`}>目前結餘</p><p className={`text-2xl font-bold ${balance < 0 ? 'text-red-700' : 'text-green-700'}`}>{balance.toLocaleString()}</p></div>
+              </div>
+
+              {/* 區塊 2：個人帳務管理 */}
+              <div>
+                <h3 className="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2">
+                  <UserIcon size={22} className="text-amber-600"/> 個人帳務管理 (對帳專用)
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-white p-6 rounded-xl border border-amber-200 bg-amber-50/30 shadow-sm flex items-center gap-4">
+                    <div className="p-3 bg-amber-100 text-amber-600 rounded-lg"><Wallet size={24} /></div>
+                    <div><p className="text-sm text-amber-700 font-medium">品印代墊總計 (需回收)</p><p className="text-2xl font-bold text-amber-900">${pinYinTotal.toLocaleString()}</p></div>
+                  </div>
+                  <div className="bg-white p-6 rounded-xl border border-blue-200 bg-blue-50/30 shadow-sm flex items-center gap-4">
+                    <div className="p-3 bg-blue-100 text-blue-600 rounded-lg"><Clock size={24} /></div>
+                    <div><p className="text-sm text-blue-700 font-medium">待收帳款總計 (尚未入帳)</p><p className="text-2xl font-bold text-blue-900">${pendingReceiptTotal.toLocaleString()}</p></div>
+                  </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
-                {renderTable('expenses', '支出明細', 'bg-red-500', data.finance.expenses)}
-                {renderTable('income', '收入與補助明細', 'bg-green-500', data.finance.income)}
+                
+                {/* 支出明細表 */}
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full">
+                  <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+                    <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-red-500"></span>支出明細
+                    </h3>
+                  </div>
+                  <div className="overflow-x-auto p-4 flex-grow">
+                    <table className="w-full text-sm text-left">
+                      <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b">
+                        <tr>
+                          <th className="px-4 py-3 w-1/4">類別</th>
+                          <th className="px-4 py-3 w-1/3">項目</th>
+                          <th className="px-4 py-3 text-right">金額</th>
+                          <th className="px-4 py-3 w-20 text-center">品印代墊</th>
+                          <th className="px-4 py-3">備註</th>
+                          {isEditing && <th className="px-2 py-3 w-10"></th>}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {data.finance.expenses.map((item, idx) => (
+                          <tr key={idx} className={`hover:bg-slate-50 transition-colors ${item.isPinYinPaid ? 'bg-amber-50/30' : ''}`}>
+                            <td className="px-4 py-2"><Input val={item.category} field="category" index={idx} type="expenses"/></td>
+                            <td className="px-4 py-2"><Input val={item.item} field="item" index={idx} type="expenses"/></td>
+                            <td className="px-4 py-2 text-right font-medium">
+                              <NumberInput val={item.amount} field="amount" index={idx} type="expenses" textClass="text-red-600"/>
+                            </td>
+                            <td className="px-4 py-2 text-center">
+                              <input 
+                                type="checkbox" 
+                                checked={item.isPinYinPaid || false} 
+                                onChange={(e) => handleChange('expenses', idx, 'isPinYinPaid', e.target.checked)} 
+                                disabled={!isEditing} 
+                                className="w-4 h-4 text-amber-600 rounded focus:ring-amber-500 cursor-pointer disabled:cursor-default" 
+                              />
+                            </td>
+                            <td className="px-4 py-2 text-slate-500 text-xs"><Input val={item.note} field="note" index={idx} type="expenses"/></td>
+                            {isEditing && (
+                              <td className="px-2 py-2 text-center">
+                                <button onClick={() => removeRow('expenses', idx)} className="text-red-400 hover:text-red-600"><Trash2 size={16}/></button>
+                              </td>
+                            )}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {isEditing && (
+                      <button onClick={() => addRow('expenses')} className="w-full mt-3 py-2 border-2 border-dashed border-slate-300 text-slate-500 hover:border-blue-500 hover:text-blue-500 rounded-lg flex justify-center items-center gap-2 transition-colors">
+                        <Plus size={16} /> 新增列
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* 收入與補助明細表 */}
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full">
+                  <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+                    <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-green-500"></span>收入與補助明細
+                    </h3>
+                  </div>
+                  <div className="overflow-x-auto p-4 flex-grow">
+                    <table className="w-full text-sm text-left">
+                      <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b">
+                        <tr>
+                          <th className="px-4 py-3 w-1/4">類別</th>
+                          <th className="px-4 py-3 w-1/3">項目</th>
+                          <th className="px-4 py-3 text-right">金額</th>
+                          <th className="px-4 py-3 w-20 text-center">已收款</th>
+                          <th className="px-4 py-3">備註</th>
+                          {isEditing && <th className="px-2 py-3 w-10"></th>}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {data.finance.income.map((item, idx) => (
+                          <tr key={idx} className={`hover:bg-slate-50 transition-colors ${!item.isReceived ? 'bg-blue-50/30' : ''}`}>
+                            <td className="px-4 py-2"><Input val={item.category} field="category" index={idx} type="income"/></td>
+                            <td className="px-4 py-2"><Input val={item.item} field="item" index={idx} type="income"/></td>
+                            <td className="px-4 py-2 text-right font-medium">
+                              <NumberInput val={item.amount} field="amount" index={idx} type="income" textClass="text-green-600"/>
+                            </td>
+                            <td className="px-4 py-2 text-center">
+                              <input 
+                                type="checkbox" 
+                                checked={item.isReceived || false} 
+                                onChange={(e) => handleChange('income', idx, 'isReceived', e.target.checked)} 
+                                disabled={!isEditing} 
+                                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer disabled:cursor-default" 
+                              />
+                            </td>
+                            <td className="px-4 py-2 text-slate-500 text-xs"><Input val={item.note} field="note" index={idx} type="income"/></td>
+                            {isEditing && (
+                              <td className="px-2 py-2 text-center">
+                                <button onClick={() => removeRow('income', idx)} className="text-red-400 hover:text-red-600"><Trash2 size={16}/></button>
+                              </td>
+                            )}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {isEditing && (
+                      <button onClick={() => addRow('income')} className="w-full mt-3 py-2 border-2 border-dashed border-slate-300 text-slate-500 hover:border-blue-500 hover:text-blue-500 rounded-lg flex justify-center items-center gap-2 transition-colors">
+                        <Plus size={16} /> 新增列
+                      </button>
+                    )}
+                  </div>
+                </div>
+
               </div>
             </div>
           );
@@ -510,15 +613,29 @@
                 if (snap.exists()) {
                   let serverData = snap.data();
                   
-                  // 自動修復結構：如果讀到舊資料缺乏 invoice.months 或課程欄位太少，自動補齊
+                  // 自動修復結構：確保有新的屬性
                   if (!serverData.invoice?.months || !serverData.course?.columns || serverData.course.columns.length < 10) {
                       const mergedData = generateDefaultData();
-                      // 保留財務總表舊資料
-                      if (serverData.finance) mergedData.finance = serverData.finance;
-                      // 強制覆蓋寫回新結構
+                      if (serverData.finance) {
+                          mergedData.finance = serverData.finance;
+                          // 處理舊版收入資料轉換
+                          mergedData.finance.income.forEach(item => {
+                              if (item.isReceived === undefined) {
+                                  item.isReceived = item.status !== '尚未收到款項';
+                              }
+                          });
+                      }
                       setDoc(docRef, mergedData);
                       setData(mergedData);
                   } else {
+                    // 處理舊版收入資料轉換
+                    if (serverData.finance?.income) {
+                        serverData.finance.income.forEach(item => {
+                            if (item.isReceived === undefined) {
+                                item.isReceived = item.status !== '尚未收到款項';
+                            }
+                        });
+                    }
                     setData(serverData);
                   }
                 } else {
