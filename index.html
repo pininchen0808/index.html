@@ -95,6 +95,18 @@
             }
           }
 
+          // 只保留前 20 位成員作為預設值
+          const initialMembers = [
+            "品印", "Abby", "益蟲", "廷柔", "育綸", "珮綺", "弘霖", "Yoyo", "Adele", "佳雯", 
+            "冠煒", "葳杉", "彥廷", "敬翰", "冠廷", "小每", "衣淇", "Amanda", "宣穎", "若瑄"
+          ].map((name, idx) => ({
+            id: `m_${idx}`,
+            name: name,
+            type: '社員',
+            registered: {},
+            payments: {}
+          }));
+
           return {
             finance: {
               expenses: [
@@ -120,32 +132,7 @@
                 { id: 'c9', name: '11/3 基礎養成', memberPrice: 150, nonMemberPrice: 400 }, 
                 { id: 'c10', name: '12/1 K-POP', memberPrice: 150, nonMemberPrice: 400 }
               ],
-              members: [
-                { id: 'm1', name: '品印', type: '社員', registered: { c1: true, c2: true }, payments: { c1: 150, c2: 280 } },
-                { id: 'm2', name: 'Abby', type: '社員', registered: { c1: true, c2: true }, payments: { c1: 150, c2: 280 } },
-                { id: 'm3', name: '益蟲', type: '社員', registered: {}, payments: {} },
-                { id: 'm4', name: '廷柔', type: '社員', registered: {}, payments: {} },
-                { id: 'm5', name: '育綸', type: '社員', registered: {}, payments: {} },
-                { id: 'm6', name: '珮綺', type: '社員', registered: {}, payments: {} },
-                { id: 'm7', name: '弘霖', type: '社員', registered: {}, payments: {} },
-                { id: 'm8', name: 'Yoyo', type: '社員', registered: {}, payments: {} },
-                { id: 'm9', name: 'Adele', type: '社員', registered: {}, payments: {} },
-                { id: 'm10', name: '佳雯', type: '社員', registered: {}, payments: {} },
-                { id: 'm11', name: '冠煒', type: '社員', registered: {}, payments: {} },
-                { id: 'm12', name: '葳杉', type: '社員', registered: {}, payments: {} },
-                { id: 'm13', name: '彥廷', type: '社員', registered: {}, payments: {} },
-                { id: 'm14', name: '敬翰', type: '社員', registered: {}, payments: {} },
-                { id: 'm15', name: '冠廷', type: '社員', registered: {}, payments: {} },
-                { id: 'm16', name: '小每', type: '社員', registered: {}, payments: {} },
-                { id: 'm17', name: '衣淇', type: '社員', registered: {}, payments: {} },
-                { id: 'm18', name: 'Amanda', type: '社員', registered: {}, payments: {} },
-                { id: 'm19', name: '宣穎', type: '社員', registered: {}, payments: {} },
-                { id: 'm20', name: '若瑄', type: '社員', registered: {}, payments: {} },
-                { id: 'm21', name: '銘樺', type: '社員', registered: {}, payments: {} },
-                { id: 'm22', name: '庭豪', type: '社員', registered: {}, payments: {} },
-                { id: 'm23', name: '文彬', type: '社員', registered: {}, payments: {} },
-                { id: 'm24', name: '品印朋友', type: '非社員', registered: { c2: true }, payments: { c2: 400 } }
-              ]
+              members: initialMembers
             },
             invoice: {
               company: { name: '天茂企管顧問有限公司', taxId: '89177254' },
@@ -166,7 +153,6 @@
           const totalIncome = data.finance.income.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
           const balance = totalIncome + totalExpense;
 
-          // 計算各大社團單獨的收支
           const daTiaoExpense = data.finance.expenses.filter(i => i.club === '大跳社').reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
           const ouDouKExpense = data.finance.expenses.filter(i => i.club === '歐豆K社').reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
           
@@ -219,7 +205,6 @@
 
           return (
             <div className="space-y-8 animate-in fade-in duration-300">
-              {/* 區塊 1：社團營運總覽 */}
               <div>
                 <h3 className="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2">
                   <Briefcase size={22} className="text-blue-600"/> 社團營運帳戶
@@ -252,7 +237,6 @@
                 </div>
               </div>
 
-              {/* 區塊 2：個人帳務管理 */}
               <div>
                 <h3 className="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2">
                   <UserIcon size={22} className="text-amber-600"/> 個人帳務管理 (對帳專用)
@@ -270,7 +254,6 @@
               </div>
 
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
-                {/* 支出明細表 */}
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full">
                   <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
                     <h3 className="font-bold text-slate-800 flex items-center gap-2">
@@ -336,7 +319,6 @@
                   </div>
                 </div>
 
-                {/* 收入與補助明細表 */}
                 <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full">
                   <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
                     <h3 className="font-bold text-slate-800 flex items-center gap-2">
@@ -401,13 +383,11 @@
                     )}
                   </div>
                 </div>
-
               </div>
             </div>
           );
         };
 
-        // --- 元件：社員名單 (中央資料庫) ---
         const MemberListTab = ({ data, isEditing, setData }) => {
           const handleMemberChange = (idx, field, value) => {
             const newData = JSON.parse(JSON.stringify(data));
@@ -434,14 +414,28 @@
             setData(newData);
           };
 
+          const removeAllMembers = () => {
+            if(!confirm("⚠️ 警告：確定要刪除「所有」成員嗎？此操作無法復原，相關報名與繳費紀錄將會一併清空！")) return;
+            const newData = JSON.parse(JSON.stringify(data));
+            newData.course.members = [];
+            setData(newData);
+          };
+
           return (
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden animate-in fade-in duration-300">
               <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
                 <h3 className="font-bold text-slate-800 flex items-center gap-2"><ContactIcon size={20} className="text-blue-600" /> 社團成員名冊</h3>
                 {isEditing && (
-                  <button onClick={addMember} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded flex items-center gap-1 text-sm shadow-sm transition-colors">
-                    <Plus size={16} /> 新增成員
-                  </button>
+                  <div className="flex items-center gap-2">
+                    {data.course.members.length > 0 && (
+                      <button onClick={removeAllMembers} className="bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 px-3 py-1.5 rounded flex items-center gap-1 text-sm shadow-sm transition-colors">
+                        <Trash2 size={16} /> 一鍵全刪
+                      </button>
+                    )}
+                    <button onClick={addMember} className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded flex items-center gap-1 text-sm shadow-sm transition-colors">
+                      <Plus size={16} /> 新增成員
+                    </button>
+                  </div>
                 )}
               </div>
               <div className="overflow-x-auto">
@@ -460,7 +454,6 @@
                     {data.course.members.map((member, idx) => {
                       const totalPaid = Object.values(member.payments || {}).reduce((sum, val) => sum + (Number(val) || 0), 0);
                       const enrolledCourses = data.course.columns.filter(c => member.registered && member.registered[c.id]);
-
                       return (
                         <tr key={member.id || idx} className="hover:bg-slate-50 transition-colors">
                           <td className="px-6 py-4 text-center text-slate-400">{idx + 1}</td>
@@ -477,15 +470,11 @@
                               <span className={`px-2 py-1 rounded text-xs font-semibold ${member.type === '非社員' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>{member.type || '社員'}</span>
                             )}
                           </td>
-                          <td className="px-6 py-4 text-right font-bold text-blue-700">
-                            ${totalPaid.toLocaleString()}
-                          </td>
+                          <td className="px-6 py-4 text-right font-bold text-blue-700">${totalPaid.toLocaleString()}</td>
                           <td className="px-6 py-4">
                             <div className="flex flex-wrap gap-2">
                                 {enrolledCourses.length > 0 ? enrolledCourses.map(c => (
-                                    <span key={c.id} className="px-2.5 py-1 bg-indigo-50 border border-indigo-100 text-indigo-700 rounded-md text-xs font-medium">
-                                        {c.name}
-                                    </span>
+                                    <span key={c.id} className="px-2.5 py-1 bg-indigo-50 border border-indigo-100 text-indigo-700 rounded-md text-xs font-medium">{c.name}</span>
                                 )) : <span className="text-slate-400 text-xs italic">尚未報名任何課程</span>}
                             </div>
                           </td>
@@ -499,15 +488,11 @@
                     })}
                   </tbody>
                 </table>
-                {data.course.members.length === 0 && (
-                    <div className="p-8 text-center text-slate-400">目前尚無任何成員，請點擊上方按鈕新增。</div>
-                )}
               </div>
             </div>
           );
         };
 
-        // --- 元件：課程報名 (矩陣) ---
         const RegistrationTab = ({ data, isEditing, setData }) => {
           const handleColumnPriceChange = (colId, field, value) => {
             const newData = JSON.parse(JSON.stringify(data));
@@ -522,17 +507,12 @@
             const newData = JSON.parse(JSON.stringify(data));
             const member = newData.course.members[idx];
             const col = newData.course.columns.find(c => c.id === colId);
-            
             if (!member.registered) member.registered = {};
             if (!member.payments) member.payments = {};
-
             member.registered[colId] = checked;
-            
-            // 智慧防呆：打勾時自動帶入對應欄位設定的預設金額
             if (checked && (!member.payments[colId] || member.payments[colId] === 0)) {
                 member.payments[colId] = member.type === '社員' ? (col.memberPrice || 0) : (col.nonMemberPrice || 0);
             } else if (!checked) {
-                // 取消打勾時自動將費用歸零
                 member.payments[colId] = 0;
             }
             setData(newData);
@@ -545,7 +525,6 @@
             setData(newData);
           };
 
-          // 計算各欄位總收費
           const totals = {};
           data.course.columns.forEach(col => {
             totals[col.id] = data.course.members.reduce((sum, m) => sum + (Number(m.payments?.[col.id]) || 0), 0);
@@ -591,16 +570,13 @@
                     {data.course.members.map((member, idx) => (
                       <tr key={member.id || idx} className="hover:bg-slate-50 transition-colors">
                         <td className="px-4 py-3 text-center text-slate-400 sticky left-0 bg-white group-hover:bg-slate-50 border-r border-slate-100">{idx + 1}</td>
-                        <td className="px-4 py-3 sticky left-[48px] bg-white group-hover:bg-slate-50 border-r border-slate-100 font-medium text-slate-800">
-                           {member.name || '-'}
-                        </td>
+                        <td className="px-4 py-3 sticky left-[48px] bg-white group-hover:bg-slate-50 border-r border-slate-100 font-medium text-slate-800">{member.name || '-'}</td>
                         <td className="px-4 py-3 sticky left-[144px] bg-white group-hover:bg-slate-50 border-r border-slate-100 text-center">
-                           <span className={`px-2 py-1 rounded text-[10px] font-semibold tracking-wider ${member.type === '非社員' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>{member.type || '社員'}</span>
+                            <span className={`px-2 py-1 rounded text-[10px] font-semibold tracking-wider ${member.type === '非社員' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>{member.type || '社員'}</span>
                         </td>
                         {data.course.columns.map(col => {
                           const isReg = member.registered?.[col.id] || false;
                           const amount = member.payments?.[col.id] || 0;
-                          
                           return (
                             <td key={col.id} className="px-2 py-2 text-center border-r border-slate-100 align-middle">
                                 {isEditing ? (
@@ -647,58 +623,46 @@
           );
         };
 
-        // --- 元件：經費核銷 (雙社團版) ---
         const InvoiceTab = ({ data, isEditing, setData }) => {
           const [expandedMonths, setExpandedMonths] = useState({ 4: true });
-
-          const toggleMonth = (monthId) => {
-            setExpandedMonths(prev => ({ ...prev, [monthId]: !prev[monthId] }));
-          };
-
+          const toggleMonth = (monthId) => setExpandedMonths(prev => ({ ...prev, [monthId]: !prev[monthId] }));
           const handleMonthInfoChange = (monthIdx, clubKey, field, value) => {
             const newData = JSON.parse(JSON.stringify(data));
             newData.invoice.months[monthIdx][clubKey][field] = value;
             setData(newData);
           };
-
           const handleItemChange = (monthIdx, clubKey, itemIdx, field, value) => {
             const newData = JSON.parse(JSON.stringify(data));
             newData.invoice.months[monthIdx][clubKey].items[itemIdx][field] = value;
             setData(newData);
           };
-
           const addItem = (monthIdx, clubKey) => {
             const newData = JSON.parse(JSON.stringify(data));
             newData.invoice.months[monthIdx][clubKey].items.push({ category: '', amount: 0, payer: '' });
             setData(newData);
           };
-
           const removeItem = (monthIdx, clubKey, itemIdx) => {
             const newData = JSON.parse(JSON.stringify(data));
             newData.invoice.months[monthIdx][clubKey].items.splice(itemIdx, 1);
             setData(newData);
           };
-
           const renderClubInvoicePanel = (monthData, monthIdx, clubKey, clubName, headerColors) => {
               const clubInfo = monthData[clubKey];
               if (!clubInfo) return null;
-
               const items = clubInfo.items || [];
               const totalAmount = items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
               const budget = Number(clubInfo.budget) || 0;
               const shortfall = budget - totalAmount;
               const hasItems = items.length > 0;
-
               return (
                   <div className="bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm flex flex-col">
                       <div className={`px-4 py-3 flex justify-between items-center text-white ${headerColors}`}>
                           <span className="font-bold flex items-center gap-2"><Star size={16}/> {clubName}</span>
                       </div>
-                      
                       <div className="p-4 border-b border-slate-100 bg-slate-50/50">
                           {isEditing ? (
                               <div className="flex flex-col xl:flex-row gap-3 xl:items-center">
-                                  <input type="text" placeholder="輸入補助目的 (如:社團博覽會)" value={clubInfo.purpose || ''} onChange={(e) => handleMonthInfoChange(monthIdx, clubKey, 'purpose', e.target.value)} className="flex-1 px-3 py-1.5 border border-blue-300 rounded text-sm focus:ring-2 focus:ring-blue-500" />
+                                  <input type="text" placeholder="輸入補助目的" value={clubInfo.purpose || ''} onChange={(e) => handleMonthInfoChange(monthIdx, clubKey, 'purpose', e.target.value)} className="flex-1 px-3 py-1.5 border border-blue-300 rounded text-sm focus:ring-2 focus:ring-blue-500" />
                                   <div className="flex items-center gap-2">
                                     <span className="text-sm text-slate-500 whitespace-nowrap">補助額度:</span>
                                     <input type="number" placeholder="金額" value={clubInfo.budget || 0} onChange={(e) => handleMonthInfoChange(monthIdx, clubKey, 'budget', e.target.value)} className="w-28 px-3 py-1.5 border border-blue-300 rounded text-sm text-right focus:ring-2 focus:ring-blue-500" />
@@ -711,7 +675,6 @@
                               </div>
                           )}
                       </div>
-
                       <div className="flex-1 overflow-x-auto">
                           {(hasItems || isEditing) ? (
                               <table className="w-full text-sm text-left">
@@ -728,39 +691,17 @@
                                       {items.map((item, itemIdx) => (
                                           <tr key={itemIdx} className="hover:bg-slate-50">
                                               <td className="px-4 py-2 text-center text-slate-400">{itemIdx + 1}</td>
-                                              <td className="px-4 py-2">
-                                                  {isEditing ? <input type="text" placeholder="如: 道具、發票號碼" value={item.category} onChange={(e) => handleItemChange(monthIdx, clubKey, itemIdx, 'category', e.target.value)} className="w-full px-2 py-1 border border-blue-300 rounded focus:ring-2 focus:ring-blue-500" /> : item.category}
-                                              </td>
-                                              <td className="px-4 py-2 text-right font-medium text-slate-800">
-                                                  {isEditing ? <input type="number" value={item.amount} onChange={(e) => handleItemChange(monthIdx, clubKey, itemIdx, 'amount', e.target.value)} className="w-20 px-2 py-1 border border-blue-300 rounded text-right focus:ring-2 focus:ring-blue-500" /> : `$${Number(item.amount).toLocaleString()}`}
-                                              </td>
-                                              <td className="px-4 py-2 text-slate-600">
-                                                  {isEditing ? <input type="text" value={item.payer} onChange={(e) => handleItemChange(monthIdx, clubKey, itemIdx, 'payer', e.target.value)} className="w-full px-2 py-1 border border-blue-300 rounded focus:ring-2 focus:ring-blue-500" /> : item.payer}
-                                              </td>
-                                              {isEditing && (
-                                                  <td className="px-2 py-2 text-center">
-                                                      <button onClick={() => removeItem(monthIdx, clubKey, itemIdx)} className="text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50"><Trash2 size={16}/></button>
-                                                  </td>
-                                              )}
+                                              <td className="px-4 py-2">{isEditing ? <input type="text" value={item.category} onChange={(e) => handleItemChange(monthIdx, clubKey, itemIdx, 'category', e.target.value)} className="w-full px-2 py-1 border border-blue-300 rounded focus:ring-2 focus:ring-blue-500" /> : item.category}</td>
+                                              <td className="px-4 py-2 text-right font-medium text-slate-800">{isEditing ? <input type="number" value={item.amount} onChange={(e) => handleItemChange(monthIdx, clubKey, itemIdx, 'amount', e.target.value)} className="w-20 px-2 py-1 border border-blue-300 rounded text-right focus:ring-2 focus:ring-blue-500" /> : `$${Number(item.amount).toLocaleString()}`}</td>
+                                              <td className="px-4 py-2 text-slate-600">{isEditing ? <input type="text" value={item.payer} onChange={(e) => handleItemChange(monthIdx, clubKey, itemIdx, 'payer', e.target.value)} className="w-full px-2 py-1 border border-blue-300 rounded focus:ring-2 focus:ring-blue-500" /> : item.payer}</td>
+                                              {isEditing && <td className="px-2 py-2 text-center"><button onClick={() => removeItem(monthIdx, clubKey, itemIdx)} className="text-red-400 hover:text-red-600 p-1 rounded hover:bg-red-50"><Trash2 size={16}/></button></td>}
                                           </tr>
                                       ))}
                                   </tbody>
                               </table>
-                          ) : (
-                              <div className="py-8 text-center text-slate-400">
-                                  <p className="text-sm">尚未有核銷紀錄</p>
-                              </div>
-                          )}
+                          ) : <div className="py-8 text-center text-slate-400"><p className="text-sm">尚未有核銷紀錄</p></div>}
                       </div>
-
-                      {isEditing && (
-                          <div className="px-4 py-2 border-t border-slate-100 bg-slate-50">
-                              <button onClick={() => addItem(monthIdx, clubKey)} className="text-blue-600 hover:text-blue-800 font-medium text-sm flex items-center gap-1 transition-colors">
-                                  <Plus size={16} /> 新增明細
-                              </button>
-                          </div>
-                      )}
-
+                      {isEditing && <div className="px-4 py-2 border-t border-slate-100 bg-slate-50"><button onClick={() => addItem(monthIdx, clubKey)} className="text-blue-600 hover:text-blue-800 font-medium text-sm flex items-center gap-1 transition-colors"><Plus size={16} /> 新增明細</button></div>}
                       <div className="bg-slate-100 flex justify-between items-center text-sm border-t border-slate-200 mt-auto">
                           <div className="px-4 py-3 flex-1 flex justify-between items-center">
                               <span className="font-bold text-slate-500 tracking-wider">總計花費</span>
@@ -774,55 +715,33 @@
                   </div>
               );
           };
-
           return (
             <div className="space-y-6 pb-20 animate-in fade-in duration-300">
               <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl p-6 text-white shadow-md flex items-center justify-between">
                 <div>
                   <h2 className="text-2xl font-bold mb-2">抬頭：{data.invoice.company.name}</h2>
-                  <p className="text-blue-100 text-lg flex items-center gap-2">
-                    <ReceiptIcon size={20} />統編：<span className="font-mono bg-white/20 px-2 py-1 rounded">{data.invoice.company.taxId}</span>
-                  </p>
+                  <p className="text-blue-100 text-lg flex items-center gap-2"><ReceiptIcon size={20} />統編：<span className="font-mono bg-white/20 px-2 py-1 rounded">{data.invoice.company.taxId}</span></p>
                 </div>
                 <div className="hidden md:block opacity-20"><FileText size={80} /></div>
               </div>
-
               <div className="space-y-4">
                 {data.invoice.months.map((monthData, monthIdx) => {
                   const isExpanded = expandedMonths[monthData.id] || false;
-                  
                   const daTiaoTotal = (monthData.daTiao?.items || []).reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
                   const ouDouKTotal = (monthData.ouDouK?.items || []).reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
                   const combinedTotal = daTiaoTotal + ouDouKTotal;
-                  const hasItems = combinedTotal > 0;
-
                   return (
                     <div key={monthData.id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden transition-all duration-300">
-                      <div 
-                        onClick={() => toggleMonth(monthData.id)}
-                        className={`px-6 py-4 flex flex-wrap items-center justify-between cursor-pointer hover:bg-slate-50 select-none ${isExpanded ? 'bg-blue-50/50 border-b border-blue-200' : ''}`}
-                      >
+                      <div onClick={() => toggleMonth(monthData.id)} className={`px-6 py-4 flex flex-wrap items-center justify-between cursor-pointer hover:bg-slate-50 select-none ${isExpanded ? 'bg-blue-50/50 border-b border-blue-200' : ''}`}>
                         <div className="flex items-center gap-4">
                           <h3 className="font-bold text-xl text-blue-900 w-16">{monthData.name}</h3>
-                          {!isExpanded && (
-                            <span className="text-sm text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
-                              雙社團獨立核銷區塊
-                            </span>
-                          )}
+                          {!isExpanded && <span className="text-sm text-slate-500 bg-slate-100 px-3 py-1 rounded-full">雙社團獨立核銷區塊</span>}
                         </div>
-
                         <div className="flex items-center gap-6 mt-2 md:mt-0">
-                          {!isExpanded && hasItems && (
-                            <div className="text-sm text-slate-500">
-                              整月合計核銷: <strong className="text-slate-800">${combinedTotal.toLocaleString()}</strong>
-                            </div>
-                          )}
-                          <div className="text-slate-400">
-                            {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-                          </div>
+                          {!isExpanded && combinedTotal > 0 && <div className="text-sm text-slate-500">整月合計核銷: <strong className="text-slate-800">${combinedTotal.toLocaleString()}</strong></div>}
+                          <div className="text-slate-400">{isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}</div>
                         </div>
                       </div>
-
                       {isExpanded && (
                         <div className="p-4 lg:p-6 bg-slate-50/50 animate-in slide-in-from-top-2 duration-200">
                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -839,211 +758,110 @@
           );
         };
 
-        // --- 元件：積分競賽統計 ---
         const CompetitionTab = ({ data, isEditing, setData }) => {
-          
-          const getNewMemberScore = (count) => {
-              if (count >= 11) return 4;
-              if (count >= 7) return 3;
-              if (count >= 4) return 2;
-              if (count >= 1) return 1;
-              return 0;
-          };
-          const getActivityScore = (count) => {
-              if (count >= 7) return 4;
-              if (count >= 5) return 3;
-              if (count >= 3) return 2;
-              if (count >= 1) return 1;
-              return 0;
-          };
-          const getPostScore = (count) => {
-              if (count >= 16) return 4;
-              if (count >= 11) return 3;
-              if (count >= 6) return 2;
-              if (count >= 1) return 1;
-              return 0;
-          };
-
+          const getNewMemberScore = (count) => count >= 11 ? 4 : count >= 7 ? 3 : count >= 4 ? 2 : count >= 1 ? 1 : 0;
+          const getActivityScore = (count) => count >= 7 ? 4 : count >= 5 ? 3 : count >= 3 ? 2 : count >= 1 ? 1 : 0;
+          const getPostScore = (count) => count >= 16 ? 4 : count >= 11 ? 3 : count >= 6 ? 2 : count >= 1 ? 1 : 0;
           const handleCountChange = (club, field, value) => {
               const newData = JSON.parse(JSON.stringify(data));
               newData.competition[club][field] = Number(value);
               setData(newData);
           };
-
           const addPost = (club) => {
               const newData = JSON.parse(JSON.stringify(data));
               newData.competition[club].posts.push({ date: '', title: '' });
               setData(newData);
           };
-
           const removePost = (club, idx) => {
               const newData = JSON.parse(JSON.stringify(data));
               newData.competition[club].posts.splice(idx, 1);
               setData(newData);
           };
-
           const handlePostChange = (club, idx, field, value) => {
               const newData = JSON.parse(JSON.stringify(data));
               newData.competition[club].posts[idx][field] = value;
               setData(newData);
           };
-
           const renderClubPanel = (clubKey, clubName, headerColor, iconColor) => {
               const clubData = data.competition[clubKey];
               const membersCount = clubData.newMembers || 0;
               const activitiesCount = clubData.activities || 0;
               const postsCount = clubData.posts ? clubData.posts.length : 0;
-              
-              const pMembers = getNewMemberScore(membersCount);
-              const pActivities = getActivityScore(activitiesCount);
-              const pPosts = getPostScore(postsCount);
-              const totalScore = pMembers + pActivities + pPosts;
-
+              const totalScore = getNewMemberScore(membersCount) + getActivityScore(activitiesCount) + getPostScore(postsCount);
               return (
                   <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full">
                       <div className={`px-6 py-4 border-b flex justify-between items-center text-white ${headerColor}`}>
-                          <h3 className="font-bold text-lg flex items-center gap-2">
-                              <Star size={20} className="fill-current text-white/80" /> {clubName}
-                          </h3>
-                          <div className="bg-white/20 px-3 py-1 rounded-full text-sm font-semibold tracking-wide">
-                              總積分: {totalScore}
-                          </div>
+                          <h3 className="font-bold text-lg flex items-center gap-2"><Star size={20} className="fill-current text-white/80" /> {clubName}</h3>
+                          <div className="bg-white/20 px-3 py-1 rounded-full text-sm font-semibold tracking-wide">總積分: {totalScore}</div>
                       </div>
-
                       <div className="p-6 space-y-6">
                           <div className="grid grid-cols-2 gap-4">
                               <div className="bg-slate-50 p-4 rounded-lg border border-slate-100 flex flex-col justify-between">
-                                  <div className="text-sm text-slate-500 font-medium mb-2">新增社團成員數</div>
+                                  <div className="text-sm text-slate-500 font-medium mb-2">新增社員數</div>
                                   <div className="flex justify-between items-end">
-                                      {isEditing ? (
-                                          <input type="number" min="0" value={membersCount} onChange={(e) => handleCountChange(clubKey, 'newMembers', e.target.value)} className="w-16 px-2 py-1 border border-blue-300 rounded text-center focus:ring-2 focus:ring-blue-500" />
-                                      ) : (
-                                          <span className="text-2xl font-bold text-slate-800">{membersCount}<span className="text-sm font-normal text-slate-500 ml-1">人</span></span>
-                                      )}
-                                      <span className={`text-lg font-bold ${pMembers > 0 ? iconColor : 'text-slate-300'}`}>+{pMembers} 積分</span>
+                                      {isEditing ? <input type="number" min="0" value={membersCount} onChange={(e) => handleCountChange(clubKey, 'newMembers', e.target.value)} className="w-16 px-2 py-1 border border-blue-300 rounded text-center focus:ring-2 focus:ring-blue-500" /> : <span className="text-2xl font-bold text-slate-800">{membersCount}<span className="text-sm font-normal text-slate-500 ml-1">人</span></span>}
+                                      <span className={`text-lg font-bold ${getNewMemberScore(membersCount) > 0 ? iconColor : 'text-slate-300'}`}>+{getNewMemberScore(membersCount)}</span>
                                   </div>
                               </div>
                               <div className="bg-slate-50 p-4 rounded-lg border border-slate-100 flex flex-col justify-between">
                                   <div className="text-sm text-slate-500 font-medium mb-2">辦理活動次數</div>
                                   <div className="flex justify-between items-end">
-                                      {isEditing ? (
-                                          <input type="number" min="0" value={activitiesCount} onChange={(e) => handleCountChange(clubKey, 'activities', e.target.value)} className="w-16 px-2 py-1 border border-blue-300 rounded text-center focus:ring-2 focus:ring-blue-500" />
-                                      ) : (
-                                          <span className="text-2xl font-bold text-slate-800">{activitiesCount}<span className="text-sm font-normal text-slate-500 ml-1">次</span></span>
-                                      )}
-                                      <span className={`text-lg font-bold ${pActivities > 0 ? iconColor : 'text-slate-300'}`}>+{pActivities} 積分</span>
+                                      {isEditing ? <input type="number" min="0" value={activitiesCount} onChange={(e) => handleCountChange(clubKey, 'activities', e.target.value)} className="w-16 px-2 py-1 border border-blue-300 rounded text-center focus:ring-2 focus:ring-blue-500" /> : <span className="text-2xl font-bold text-slate-800">{activitiesCount}<span className="text-sm font-normal text-slate-500 ml-1">次</span></span>}
+                                      <span className={`text-lg font-bold ${getActivityScore(activitiesCount) > 0 ? iconColor : 'text-slate-300'}`}>+{getActivityScore(activitiesCount)}</span>
                                   </div>
                               </div>
                           </div>
-
                           <div>
                               <div className="flex justify-between items-center mb-3">
-                                  <div className="flex items-center gap-2">
-                                    <h4 className="font-bold text-slate-700">平台發文日誌</h4>
-                                    <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">共 {postsCount} 篇</span>
-                                  </div>
-                                  <span className={`text-lg font-bold ${pPosts > 0 ? iconColor : 'text-slate-300'}`}>+{pPosts} 積分</span>
+                                  <div className="flex items-center gap-2"><h4 className="font-bold text-slate-700">平台發文日誌</h4><span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">共 {postsCount} 篇</span></div>
+                                  <span className={`text-lg font-bold ${getPostScore(postsCount) > 0 ? iconColor : 'text-slate-300'}`}>+{getPostScore(postsCount)}</span>
                               </div>
-                              
                               <div className="border border-slate-200 rounded-lg overflow-hidden">
                                   <table className="w-full text-sm text-left">
-                                      <thead className="text-xs text-slate-500 bg-slate-50 border-b">
-                                          <tr>
-                                              <th className="px-4 py-2 w-10 text-center">#</th>
-                                              <th className="px-4 py-2 w-32">發文日期</th>
-                                              <th className="px-4 py-2">貼文主題 / 備註</th>
-                                              {isEditing && <th className="px-2 py-2 w-10"></th>}
-                                          </tr>
-                                      </thead>
+                                      <thead className="text-xs text-slate-500 bg-slate-50 border-b"><tr><th className="px-4 py-2 w-10 text-center">#</th><th className="px-4 py-2 w-32">日期</th><th className="px-4 py-2">主題</th>{isEditing && <th className="px-2 py-2 w-10"></th>}</tr></thead>
                                       <tbody className="divide-y divide-slate-100">
                                           {clubData.posts && clubData.posts.map((post, idx) => (
                                               <tr key={idx} className="hover:bg-slate-50">
                                                   <td className="px-4 py-2 text-center text-slate-400">{idx + 1}</td>
-                                                  <td className="px-4 py-2">
-                                                      {isEditing ? <input type="date" value={post.date} onChange={(e) => handlePostChange(clubKey, idx, 'date', e.target.value)} className="w-full px-1 py-1 border rounded" /> : post.date}
-                                                  </td>
-                                                  <td className="px-4 py-2">
-                                                      {isEditing ? <input type="text" placeholder="輸入主題" value={post.title} onChange={(e) => handlePostChange(clubKey, idx, 'title', e.target.value)} className="w-full px-2 py-1 border rounded" /> : post.title}
-                                                  </td>
-                                                  {isEditing && (
-                                                      <td className="px-2 py-2 text-center">
-                                                          <button onClick={() => removePost(clubKey, idx)} className="text-red-400 hover:text-red-600 p-1"><Trash2 size={16}/></button>
-                                                      </td>
-                                                  )}
+                                                  <td className="px-4 py-2">{isEditing ? <input type="date" value={post.date} onChange={(e) => handlePostChange(clubKey, idx, 'date', e.target.value)} className="w-full px-1 py-1 border rounded" /> : post.date}</td>
+                                                  <td className="px-4 py-2">{isEditing ? <input type="text" value={post.title} onChange={(e) => handlePostChange(clubKey, idx, 'title', e.target.value)} className="w-full px-2 py-1 border rounded" /> : post.title}</td>
+                                                  {isEditing && <td className="px-2 py-2 text-center"><button onClick={() => removePost(clubKey, idx)} className="text-red-400 hover:text-red-600 p-1"><Trash2 size={16}/></button></td>}
                                               </tr>
                                           ))}
-                                          {(!clubData.posts || clubData.posts.length === 0) && !isEditing && (
-                                              <tr><td colSpan="4" className="px-4 py-6 text-center text-slate-400">尚未新增任何發文紀錄</td></tr>
-                                          )}
+                                          {(!clubData.posts || clubData.posts.length === 0) && !isEditing && <tr><td colSpan="4" className="px-4 py-6 text-center text-slate-400">尚未新增任何紀錄</td></tr>}
                                       </tbody>
                                   </table>
-                                  {isEditing && (
-                                      <div className="p-2 bg-slate-50 border-t border-slate-100">
-                                          <button onClick={() => addPost(clubKey)} className="w-full py-1.5 border-2 border-dashed border-slate-300 text-slate-500 hover:border-blue-500 hover:text-blue-500 rounded text-sm flex justify-center items-center gap-1 transition-colors">
-                                              <Plus size={16} /> 新增發文紀錄
-                                          </button>
-                                      </div>
-                                  )}
+                                  {isEditing && <div className="p-2 bg-slate-50 border-t border-slate-100"><button onClick={() => addPost(clubKey)} className="w-full py-1.5 border-2 border-dashed border-slate-300 text-slate-500 hover:border-blue-500 hover:text-blue-500 rounded text-sm flex justify-center items-center gap-1 transition-colors"><Plus size={16} /> 新增發文紀錄</button></div>}
                               </div>
                           </div>
                       </div>
                   </div>
               );
           };
-
           return (
             <div className="space-y-6 animate-in fade-in duration-300">
-              {/* 兩社團數據對比 (移至上方) */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {renderClubPanel('daTiao', '一起大跳社', 'bg-gradient-to-r from-blue-600 to-blue-700', 'text-blue-600')}
                 {renderClubPanel('ouDouK', '歐豆K社', 'bg-gradient-to-r from-purple-600 to-purple-700', 'text-purple-600')}
               </div>
-
-              {/* 規則面板 (移至下方，改為明亮乾淨的主題) */}
               <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm mt-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <Trophy size={28} className="text-amber-500" />
-                  <h2 className="text-2xl font-bold text-slate-800">積分競賽規則</h2>
-                </div>
-                
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
-                  <p className="font-bold text-amber-800 flex flex-wrap gap-6 text-lg justify-center md:justify-start">
-                    <span>🥇 第一名: 獎金 5,000 元</span>
-                    <span>🥈 第二名: 獎金 3,000 元</span>
-                    <span>🥉 第三名: 獎金 2,000 元</span>
-                  </p>
-                </div>
-
+                <div className="flex items-center gap-3 mb-4"><Trophy size={28} className="text-amber-500" /><h2 className="text-2xl font-bold text-slate-800">積分競賽規則</h2></div>
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6"><p className="font-bold text-amber-800 flex flex-wrap gap-6 text-lg justify-center md:justify-start"><span>🥇 第一名: 5,000 元</span><span>🥈 第二名: 3,000 元</span><span>🥉 第三名: 2,000 元</span></p></div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-sm">
                   <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
-                    <h4 className="font-bold text-blue-700 mb-2 flex items-center gap-2"><UserIcon size={16}/> 新增社團成員數量</h4>
-                    <p className="text-slate-500 mb-3 text-xs">新成員加入必須於首次參與活動時，於平台介紹新成員。</p>
-                    <ul className="space-y-1 text-slate-600">
-                      <li>• 1~3人：<span className="text-slate-800 font-bold">1 分</span></li>
-                      <li>• 4~6人：<span className="text-slate-800 font-bold">2 分</span></li>
-                      <li>• 7~10人：<span className="text-slate-800 font-bold">3 分</span></li>
-                      <li>• 11人以上：<span className="text-slate-800 font-bold">4 分</span></li>
-                    </ul>
+                    <h4 className="font-bold text-blue-700 mb-2 flex items-center gap-2"><UserIcon size={16}/> 新增成員數量</h4>
+                    <p className="text-slate-500 mb-3 text-xs">需於首次參與活動時於平台介紹。</p>
+                    <ul className="space-y-1 text-slate-600"><li>• 1~3人：1 分</li><li>• 4~6人：2 分</li><li>• 7~10人：3 分</li><li>• 11人以上：4 分</li></ul>
                   </div>
                   <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
                     <h4 className="font-bold text-green-700 mb-2 flex items-center gap-2"><Briefcase size={16}/> 辦理活動次數</h4>
-                    <p className="text-slate-500 mb-3 text-xs">紀錄主辦或參與活動，需於活動後發表含照片貼文。</p>
-                    <ul className="space-y-1 text-slate-600">
-                      <li>• 1~2次：<span className="text-slate-800 font-bold">1 分</span></li>
-                      <li>• 3~4次：<span className="text-slate-800 font-bold">2 分</span></li>
-                      <li>• 5~6次：<span className="text-slate-800 font-bold">3 分</span></li>
-                      <li>• 7次以上：<span className="text-slate-800 font-bold">4 分</span></li>
-                    </ul>
+                    <p className="text-slate-500 mb-3 text-xs">需發表含照片貼文。</p>
+                    <ul className="space-y-1 text-slate-600"><li>• 1~2次：1 分</li><li>• 3~4次：2 分</li><li>• 5~6次：3 分</li><li>• 7次以上：4 分</li></ul>
                   </div>
                   <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
                     <h4 className="font-bold text-purple-700 mb-2 flex items-center gap-2"><FileText size={16}/> 平台發文</h4>
-                    <p className="text-slate-500 mb-3 text-xs">發布於社群，含相關照片附件且字數達100字，內容不限活動。</p>
-                    <ul className="space-y-1 text-slate-600">
-                      <li>• 1~5篇：<span className="text-slate-800 font-bold">1 分</span></li>
-                      <li>• 6~10篇：<span className="text-slate-800 font-bold">2 分</span></li>
-                      <li>• 11~15篇：<span className="text-slate-800 font-bold">3 分</span></li>
-                      <li>• 16篇以上：<span className="text-slate-800 font-bold">4 分</span></li>
-                    </ul>
+                    <p className="text-slate-500 mb-3 text-xs">含照片附件且字數達100字。</p>
+                    <ul className="space-y-1 text-slate-600"><li>• 1~5篇：1 分</li><li>• 6~10篇：2 分</li><li>• 11~15篇：3 分</li><li>• 16篇以上：4 分</li></ul>
                   </div>
                 </div>
               </div>
@@ -1052,17 +870,9 @@
         };
 
         const TabButton = ({ active, icon: Icon, label, onClick }) => (
-          <button
-            onClick={onClick}
-            className={`flex items-center gap-2 px-6 py-4 font-medium transition-colors border-b-2 whitespace-nowrap ${
-              active ? 'border-blue-600 text-blue-600 bg-blue-50/50' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'
-            }`}
-          >
-            <Icon size={18} /> {label}
-          </button>
+          <button onClick={onClick} className={`flex items-center gap-2 px-6 py-4 font-medium transition-colors border-b-2 whitespace-nowrap ${active ? 'border-blue-600 text-blue-600 bg-blue-50/50' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}><Icon size={18} /> {label}</button>
         );
 
-        // --- 主應用程式 ---
         const App = () => {
           const [activeTab, setActiveTab] = useState('finance');
           const [data, setData] = useState(null);
@@ -1074,59 +884,38 @@
               const { doc, onSnapshot, setDoc } = window.firebaseApi;
               const db = window.firebaseDb;
               const docRef = doc(db, "clubApp", "mainData");
-
               const unsubscribe = onSnapshot(docRef, (snap) => {
                 if (snap.exists()) {
                   let serverData = snap.data();
                   let needsUpdate = false;
                   let mergedData = JSON.parse(JSON.stringify(serverData));
 
-                  // 1. 自動修復：升級至雙社團核銷明細格式
                   if (mergedData.invoice?.months && mergedData.invoice.months.length > 0 && mergedData.invoice.months[0].items !== undefined) {
-                      mergedData.invoice.months = mergedData.invoice.months.map(m => {
-                          const daTiaoItems = (m.items || []).filter(i => !String(i.category).includes('歐豆'));
-                          const ouDouKItems = (m.items || []).filter(i => String(i.category).includes('歐豆'));
-                          return {
-                              id: m.id,
-                              name: m.name,
-                              daTiao: { purpose: m.purpose || '', budget: m.budget || 0, items: daTiaoItems },
-                              ouDouK: { purpose: m.purpose || '', budget: m.budget || 0, items: ouDouKItems }
-                          };
-                      });
+                      mergedData.invoice.months = mergedData.invoice.months.map(m => ({
+                          id: m.id, name: m.name,
+                          daTiao: { purpose: m.purpose || '', budget: m.budget || 0, items: (m.items || []).filter(i => !String(i.category).includes('歐豆')) },
+                          ouDouK: { purpose: m.purpose || '', budget: m.budget || 0, items: (m.items || []).filter(i => String(i.category).includes('歐豆')) }
+                      }));
                       needsUpdate = true;
                   }
 
-                  // 2. 自動修復：社團成員結構更新 (新增 registered 與 payments 物件)
                   if (mergedData.course && mergedData.course.members) {
-                      // 新增：自動為舊的課程欄位補上預設的社員/非社員價格
                       if (mergedData.course.columns) {
                           mergedData.course.columns.forEach(col => {
                               if (col.memberPrice === undefined || col.nonMemberPrice === undefined) {
-                                  col.memberPrice = 150;
-                                  col.nonMemberPrice = 400;
-                                  needsUpdate = true;
+                                  col.memberPrice = 150; col.nonMemberPrice = 400; needsUpdate = true;
                               }
                           });
                       }
-
                       mergedData.course.members = mergedData.course.members.map((m, idx) => {
                           if (m.registered === undefined || m.payments === undefined) {
                               needsUpdate = true;
-                              const newM = {
-                                  id: m.id || `m_${Date.now()}_${idx}`,
-                                  name: m.name,
-                                  type: m.type || '社員',
-                                  registered: {},
-                                  payments: {}
-                              };
+                              const newM = { id: m.id || `m_${Date.now()}_${idx}`, name: m.name, type: m.type || '社員', registered: {}, payments: {} };
                               if (mergedData.course.columns) {
                                   mergedData.course.columns.forEach(col => {
                                       if (m[col.id] !== undefined) {
                                           const amount = Number(m[col.id]) || 0;
-                                          if (amount > 0) {
-                                              newM.registered[col.id] = true;
-                                              newM.payments[col.id] = amount;
-                                          }
+                                          if (amount > 0) { newM.registered[col.id] = true; newM.payments[col.id] = amount; }
                                       }
                                   });
                               }
@@ -1136,48 +925,15 @@
                       });
                   }
 
-                  // 3. 自動修復：缺乏競技統計
-                  if (!mergedData.competition) {
-                      const defaultD = generateDefaultData();
-                      mergedData.competition = defaultD.competition;
-                      needsUpdate = true;
-                  }
-
-                  // 4. 自動補齊完整的 23 人社團名單
-                  const fullMemberNames = ["品印", "Abby", "益蟲", "廷柔", "育綸", "珮綺", "弘霖", "Yoyo", "Adele", "佳雯", "冠煒", "葳杉", "彥廷", "敬翰", "冠廷", "小每", "衣淇", "Amanda", "宣穎", "若瑄", "銘樺", "庭豪", "文彬", "品印朋友"];
-                  if (mergedData.course && mergedData.course.members) {
-                      const existingNames = mergedData.course.members.map(m => m.name);
-                      fullMemberNames.forEach((name, idx) => {
-                          if (!existingNames.includes(name)) {
-                              mergedData.course.members.push({
-                                  id: `m_auto_${Date.now()}_${idx}`,
-                                  name: name,
-                                  type: name === '品印朋友' ? '非社員' : '社員',
-                                  registered: {},
-                                  payments: {}
-                              });
-                              needsUpdate = true;
-                          }
-                      });
-                  }
-
-                  // 5. 自動修復：財務明細新增社團歸屬欄位
+                  if (!mergedData.competition) { mergedData.competition = generateDefaultData().competition; needsUpdate = true; }
                   if (mergedData.finance) {
                       ['expenses', 'income'].forEach(type => {
                           if (mergedData.finance[type]) {
-                              mergedData.finance[type].forEach(item => {
-                                  if (!item.club) {
-                                      item.club = '共用';
-                                      needsUpdate = true;
-                                  }
-                              });
+                              mergedData.finance[type].forEach(item => { if (!item.club) { item.club = '共用'; needsUpdate = true; } });
                           }
                       });
                   }
-
-                  if (needsUpdate) {
-                      setDoc(docRef, mergedData);
-                  }
+                  if (needsUpdate) { setDoc(docRef, mergedData); }
                   setData(mergedData);
                 } else {
                   setDoc(docRef, defaultData);
@@ -1186,13 +942,8 @@
               });
               return () => unsubscribe();
             };
-
-            if (window.firebaseDb) {
-              connectFirebase();
-            } else {
-              window.addEventListener('firebase-ready', connectFirebase);
-              return () => window.removeEventListener('firebase-ready', connectFirebase);
-            }
+            if (window.firebaseDb) connectFirebase();
+            else window.addEventListener('firebase-ready', connectFirebase);
           }, []);
 
           const handleSave = async () => {
@@ -1201,54 +952,23 @@
               const { doc, setDoc } = window.firebaseApi;
               await setDoc(doc(window.firebaseDb, "clubApp", "mainData"), data);
               setIsEditing(false);
-            } catch (error) {
-              alert("儲存失敗！錯誤訊息: " + error.message);
-            }
+            } catch (error) { alert("儲存失敗！" + error.message); }
             setIsSaving(false);
           };
 
-          if (!data) {
-            return (
-              <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 text-slate-500">
-                <Cloud size={48} className="animate-pulse text-blue-500 mb-4" />
-                <p>正在連線至 Firebase 資料庫...</p>
-              </div>
-            );
-          }
+          if (!data) return <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 text-slate-500"><Cloud size={48} className="animate-pulse text-blue-500 mb-4" /><p>正在連線至 Firebase 資料庫...</p></div>;
 
           return (
             <div className="min-h-screen bg-slate-50 text-slate-800 font-sans p-4 md:p-8">
               <div className="max-w-7xl mx-auto space-y-6">
-                
                 <header className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 pb-6 border-b border-slate-200">
-                  <div>
-                    <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">社團財務與管理系統</h1>
-                    <p className="text-slate-500 mt-2">統整財務報表、社員名單、經費核銷與積分統計</p>
-                  </div>
+                  <div><h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">社團財務與管理系統</h1><p className="text-slate-500 mt-2">統整財務報表、社員名單、經費核銷與積分統計</p></div>
                   <div className="flex flex-wrap items-center gap-3">
-                    <div className="flex items-center gap-2 text-sm text-slate-500 bg-white px-3 py-2 rounded-lg border border-slate-200 shadow-sm">
-                      <span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span></span>
-                      雲端同步中
-                    </div>
-                    
-                    {isEditing ? (
-                      <button onClick={handleSave} disabled={isSaving} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-medium shadow-sm transition-colors">
-                        {isSaving ? <span className="animate-spin">⏳</span> : <Save size={18} />} {isSaving ? '儲存中...' : '儲存變更'}
-                      </button>
-                    ) : (
-                      <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-5 py-2 rounded-lg font-medium shadow-sm transition-colors">
-                        <Edit size={18} /> 編輯資料
-                      </button>
-                    )}
+                    <div className="flex items-center gap-2 text-sm text-slate-500 bg-white px-3 py-2 rounded-lg border border-slate-200 shadow-sm"><span className="relative flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span></span>雲端同步中</div>
+                    {isEditing ? <button onClick={handleSave} disabled={isSaving} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-medium shadow-sm transition-colors">{isSaving ? <span className="animate-spin">⏳</span> : <Save size={18} />} {isSaving ? '儲存中...' : '儲存變更'}</button> : <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-5 py-2 rounded-lg font-medium shadow-sm transition-colors"><Edit size={18} /> 編輯資料</button>}
                   </div>
                 </header>
-
-                {isEditing && (
-                  <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg flex items-center gap-2 text-sm">
-                    <strong>提示：</strong> 您目前在編輯模式。點擊表格內的文字即可修改，修改完畢請記得點擊右上角「儲存變更」。
-                  </div>
-                )}
-
+                {isEditing && <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg flex items-center gap-2 text-sm"><strong>提示：</strong> 您目前在編輯模式。點擊表格內的文字即可修改，修改完畢請記得點擊右上角「儲存變更」。</div>}
                 <nav className="flex overflow-x-auto bg-white rounded-xl border border-slate-200 shadow-sm hide-scrollbar">
                   <TabButton active={activeTab === 'finance'} onClick={() => setActiveTab('finance')} icon={DollarSign} label="財務總表" />
                   <TabButton active={activeTab === 'members'} onClick={() => setActiveTab('members')} icon={ContactIcon} label="社員名單" />
@@ -1256,7 +976,6 @@
                   <TabButton active={activeTab === 'invoice'} onClick={() => setActiveTab('invoice')} icon={FileText} label="經費核銷明細" />
                   <TabButton active={activeTab === 'competition'} onClick={() => setActiveTab('competition')} icon={Trophy} label="積分競賽統計" />
                 </nav>
-
                 <main className="pt-2 pb-12">
                   {activeTab === 'finance' && <FinanceTab data={data} isEditing={isEditing} setData={setData} />}
                   {activeTab === 'members' && <MemberListTab data={data} isEditing={isEditing} setData={setData} />}
@@ -1264,12 +983,10 @@
                   {activeTab === 'invoice' && <InvoiceTab data={data} isEditing={isEditing} setData={setData} />}
                   {activeTab === 'competition' && <CompetitionTab data={data} isEditing={isEditing} setData={setData} />}
                 </main>
-                
               </div>
             </div>
           );
         };
-
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
