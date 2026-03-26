@@ -1,412 +1,452 @@
-import React, { useState } from 'react';
-import { DollarSign, Users, Receipt, TrendingDown, TrendingUp, Calculator, AlertCircle, CheckCircle2, FileText } from 'lucide-react';
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>社團財務與管理系統</title>
+    
+    <!-- 引入 Tailwind CSS (負責排版與樣式) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 引入 React 與 ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- 引入 Babel 讓瀏覽器可以即時編譯 JSX 語法 -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans">
+    
+    <!-- React 應用程式的掛載點 -->
+    <div id="root"></div>
 
-// --- 資料定義 (根據上傳的圖片內容建立) ---
+    <!-- 我們的應用程式邏輯 -->
+    <script type="text/babel">
+        const { useState } = React;
 
-const financeData = {
-  expenses: [
-    { category: '老師費用', item: 'CaRu課費 第一堂15人', amount: -6000, note: '' },
-    { category: '老師費用', item: '阿默課費 預計', amount: -27000, note: '3000元*9堂' },
-    { category: '場地租金', item: '3/11-Sooo dance A教室', amount: -900, note: 'So Dance餘7小時($4557)品代墊' },
-    { category: '場地租金', item: 'MIMIX教室 (9小時)', amount: -4500, note: 'A/B教室 500元/hr' },
-    { category: '場地租金', item: '表演練習3/30-Sooo dance C教室', amount: -996, note: '' },
-    { category: '場地租金', item: '表演練習4/14-MIMIX教室', amount: -500, note: '' },
-    { category: '其他活動支出', item: '油單活動(課程折抵)', amount: -50, note: '' },
-  ],
-  income: [
-    { category: '課費', item: '2026/3/11：基礎養成', amount: 2250, note: '' },
-    { category: '課費', item: '2026/4/14：K-POP', amount: 2080, note: '' },
-    { category: '課費', item: '2026/5/5：基礎養成', amount: 0, note: '' },
-    { category: '課費', item: '預計課費', amount: 23120, note: '9堂10人收280' },
-    { category: '福委補助款', item: '福委固定補助金', amount: 8000, note: '' },
-    { category: '福委補助款', item: '社團博覽會補助金', amount: 2000, note: '' },
-    { category: '福委補助款', item: '集團聚會小遊戲宣傳活動補助', amount: 2000, note: '' },
-  ]
-};
+        // --- 內建圖示元件 (取代外部套件，確保在 GitHub Pages 100% 正常顯示) ---
+        const Icon = ({ path, size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} dangerouslySetInnerHTML={{ __html: path }} />
+        );
+        const DollarSign = (p) => <Icon {...p} path='<line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>' />;
+        const Users = (p) => <Icon {...p} path='<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>' />;
+        const Receipt = (p) => <Icon {...p} path='<path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1Z"/><path d="M16 8h-6"/><path d="M16 12h-8"/><path d="M16 16h-8"/>' />;
+        const TrendingDown = (p) => <Icon {...p} path='<polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/>' />;
+        const TrendingUp = (p) => <Icon {...p} path='<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>' />;
+        const Calculator = (p) => <Icon {...p} path='<rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/>' />;
+        const AlertCircle = (p) => <Icon {...p} path='<circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>' />;
+        const FileText = (p) => <Icon {...p} path='<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>' />;
 
-const courseData = {
-  columns: [
-    { id: 'c1', name: '第1堂 3/11 大跳' },
-    { id: 'c2', name: '第2堂 4/14 KPOP' },
-    { id: 'c3', name: '第3堂 5/5 大跳' }
-  ],
-  members: [
-    { name: '品印', c1: 150, c2: 280, c3: 0 },
-    { name: 'Abby', c1: 150, c2: 280, c3: 0 },
-    { name: '益蟲', c1: 150, c2: 280, c3: 0 },
-    { name: '廷柔', c1: 150, c2: 280, c3: 0 },
-    { name: '育綸', c1: 150, c2: null, c3: 0 },
-    { name: '珮綺', c1: 150, c2: null, c3: 0 },
-    { name: '弘霖', c1: 150, c2: null, c3: 0 },
-    { name: 'Yoyo', c1: 150, c2: null, c3: 0 },
-    { name: 'Adele', c1: 150, c2: null, c3: 0 },
-    { name: '佳雯', c1: 150, c2: null, c3: 0 },
-    { name: '冠煒', c1: 150, c2: 280, c3: 0 },
-    { name: '葳杉', c1: 150, c2: null, c3: 0 },
-    { name: '彥廷', c1: 150, c2: 280, c3: 0 },
-    { name: '宣穎', c1: 150, c2: null, c3: 0 },
-    { name: '文彬', c1: 150, c2: null, c3: 0 },
-    { name: '品印朋友', c1: null, c2: 400, c3: 0 } // Extra attendee
-  ],
-  totals: { c1: 2250, c2: 2080, c3: 0 }
-};
 
-const invoiceData = {
-  company: { name: '天茂企管顧問有限公司', taxId: '89177254' },
-  march: {
-    budget: 4000,
-    daTiao: [
-      { id: 1, amount: 1000, payer: '品印' },
-      { id: 2, amount: 92, payer: '廷柔' },
-      { id: 3, amount: 1303, payer: '品印' },
-      { id: 4, amount: 1092, payer: '品印' },
-      { id: 5, amount: 1252, payer: 'ADELE' },
-      { id: 6, amount: 94, payer: 'ABBY' },
-      { id: 7, amount: 100, payer: 'ABBY' },
-    ],
-    ouDouK: [
-      { id: 1, amount: 1024, payer: '品印' },
-      { id: 2, amount: 1489, payer: '冠廷' },
-      { id: 3, amount: 1364, payer: '冠廷' },
-      { id: 4, amount: 85, payer: 'ABBY' },
-      { id: 5, amount: 65, payer: 'ABBY' },
-    ]
-  }
-};
+        // --- 資料定義 ---
+        const financeData = {
+          expenses: [
+            { category: '老師費用', item: 'CaRu課費 第一堂15人', amount: -6000, note: '' },
+            { category: '老師費用', item: '阿默課費 預計', amount: -27000, note: '3000元*9堂' },
+            { category: '場地租金', item: '3/11-Sooo dance A教室', amount: -900, note: 'So Dance餘7小時($4557)品代墊' },
+            { category: '場地租金', item: 'MIMIX教室 (9小時)', amount: -4500, note: 'A/B教室 500元/hr' },
+            { category: '場地租金', item: '表演練習3/30-Sooo dance C教室', amount: -996, note: '' },
+            { category: '場地租金', item: '表演練習4/14-MIMIX教室', amount: -500, note: '' },
+            { category: '其他活動支出', item: '油單活動(課程折抵)', amount: -50, note: '' },
+          ],
+          income: [
+            { category: '課費', item: '2026/3/11：基礎養成', amount: 2250, note: '' },
+            { category: '課費', item: '2026/4/14：K-POP', amount: 2080, note: '' },
+            { category: '課費', item: '2026/5/5：基礎養成', amount: 0, note: '' },
+            { category: '課費', item: '預計課費', amount: 23120, note: '9堂10人收280' },
+            { category: '福委補助款', item: '福委固定補助金', amount: 8000, note: '' },
+            { category: '福委補助款', item: '社團博覽會補助金', amount: 2000, note: '' },
+            { category: '福委補助款', item: '集團聚會小遊戲宣傳活動補助', amount: 2000, note: '' },
+          ]
+        };
 
-// --- 元件定義 ---
+        const courseData = {
+          columns: [
+            { id: 'c1', name: '第1堂 3/11 大跳' },
+            { id: 'c2', name: '第2堂 4/14 KPOP' },
+            { id: 'c3', name: '第3堂 5/5 大跳' }
+          ],
+          members: [
+            { name: '品印', c1: 150, c2: 280, c3: 0 },
+            { name: 'Abby', c1: 150, c2: 280, c3: 0 },
+            { name: '益蟲', c1: 150, c2: 280, c3: 0 },
+            { name: '廷柔', c1: 150, c2: 280, c3: 0 },
+            { name: '育綸', c1: 150, c2: null, c3: 0 },
+            { name: '珮綺', c1: 150, c2: null, c3: 0 },
+            { name: '弘霖', c1: 150, c2: null, c3: 0 },
+            { name: 'Yoyo', c1: 150, c2: null, c3: 0 },
+            { name: 'Adele', c1: 150, c2: null, c3: 0 },
+            { name: '佳雯', c1: 150, c2: null, c3: 0 },
+            { name: '冠煒', c1: 150, c2: 280, c3: 0 },
+            { name: '葳杉', c1: 150, c2: null, c3: 0 },
+            { name: '彥廷', c1: 150, c2: 280, c3: 0 },
+            { name: '宣穎', c1: 150, c2: null, c3: 0 },
+            { name: '文彬', c1: 150, c2: null, c3: 0 },
+            { name: '品印朋友', c1: null, c2: 400, c3: 0 }
+          ],
+          totals: { c1: 2250, c2: 2080, c3: 0 }
+        };
 
-const TabButton = ({ active, icon: Icon, label, onClick }) => (
-  <button
-    onClick={onClick}
-    className={`flex items-center gap-2 px-6 py-3 font-medium transition-colors border-b-2 ${
-      active 
-        ? 'border-blue-600 text-blue-600 bg-blue-50/50' 
-        : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'
-    }`}
-  >
-    <Icon size={18} />
-    {label}
-  </button>
-);
+        const invoiceData = {
+          company: { name: '天茂企管顧問有限公司', taxId: '89177254' },
+          march: {
+            budget: 4000,
+            daTiao: [
+              { id: 1, amount: 1000, payer: '品印' },
+              { id: 2, amount: 92, payer: '廷柔' },
+              { id: 3, amount: 1303, payer: '品印' },
+              { id: 4, amount: 1092, payer: '品印' },
+              { id: 5, amount: 1252, payer: 'ADELE' },
+              { id: 6, amount: 94, payer: 'ABBY' },
+              { id: 7, amount: 100, payer: 'ABBY' },
+            ],
+            ouDouK: [
+              { id: 1, amount: 1024, payer: '品印' },
+              { id: 2, amount: 1489, payer: '冠廷' },
+              { id: 3, amount: 1364, payer: '冠廷' },
+              { id: 4, amount: 85, payer: 'ABBY' },
+              { id: 5, amount: 65, payer: 'ABBY' },
+            ]
+          }
+        };
 
-const FinanceTab = () => {
-  const totalExpense = financeData.expenses.reduce((sum, item) => sum + item.amount, 0);
-  const totalIncome = financeData.income.reduce((sum, item) => sum + item.amount, 0);
-  const balance = totalIncome + totalExpense;
+        // --- 元件定義 ---
 
-  return (
-    <div className="space-y-6 animate-in fade-in duration-300">
-      {/* 總覽卡片 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-red-100 text-red-600 rounded-lg"><TrendingDown size={24} /></div>
-          <div>
-            <p className="text-sm text-slate-500 font-medium">總計支出</p>
-            <p className="text-2xl font-bold text-slate-800">{totalExpense.toLocaleString()}</p>
-          </div>
-        </div>
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
-          <div className="p-3 bg-green-100 text-green-600 rounded-lg"><TrendingUp size={24} /></div>
-          <div>
-            <p className="text-sm text-slate-500 font-medium">總計收入</p>
-            <p className="text-2xl font-bold text-slate-800">{totalIncome.toLocaleString()}</p>
-          </div>
-        </div>
-        <div className={`p-6 rounded-xl border shadow-sm flex items-center gap-4 ${balance < 0 ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
-          <div className={`p-3 rounded-lg ${balance < 0 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
-            <Calculator size={24} />
-          </div>
-          <div>
-            <p className={`text-sm font-medium ${balance < 0 ? 'text-red-600/80' : 'text-green-600/80'}`}>目前結餘</p>
-            <p className={`text-2xl font-bold ${balance < 0 ? 'text-red-700' : 'text-green-700'}`}>
-              {balance.toLocaleString()}
-            </p>
-          </div>
-        </div>
-      </div>
+        const TabButton = ({ active, icon: Icon, label, onClick }) => (
+          <button
+            onClick={onClick}
+            className={`flex items-center gap-2 px-6 py-3 font-medium transition-colors border-b-2 ${
+              active 
+                ? 'border-blue-600 text-blue-600 bg-blue-50' 
+                : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+            }`}
+          >
+            <Icon size={18} />
+            {label}
+          </button>
+        );
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* 支出明細 */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
-            <h3 className="font-bold text-slate-800 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-red-500"></span>
-              支出明細
-            </h3>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b">
-                <tr>
-                  <th className="px-6 py-3">類別</th>
-                  <th className="px-6 py-3">項目</th>
-                  <th className="px-6 py-3 text-right">金額</th>
-                  <th className="px-6 py-3">備註</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {financeData.expenses.map((item, idx) => (
-                  <tr key={idx} className="hover:bg-slate-50">
-                    <td className="px-6 py-3 font-medium text-slate-600">{item.category}</td>
-                    <td className="px-6 py-3 text-slate-800">{item.item}</td>
-                    <td className="px-6 py-3 text-right text-red-600 font-medium">{item.amount.toLocaleString()}</td>
-                    <td className="px-6 py-3 text-slate-500 text-xs">{item.note}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        const FinanceTab = () => {
+          const totalExpense = financeData.expenses.reduce((sum, item) => sum + item.amount, 0);
+          const totalIncome = financeData.income.reduce((sum, item) => sum + item.amount, 0);
+          const balance = totalIncome + totalExpense;
 
-        {/* 收入明細 */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
-            <h3 className="font-bold text-slate-800 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-green-500"></span>
-              收入與補助明細
-            </h3>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b">
-                <tr>
-                  <th className="px-6 py-3">類別</th>
-                  <th className="px-6 py-3">項目</th>
-                  <th className="px-6 py-3 text-right">金額</th>
-                  <th className="px-6 py-3">備註</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {financeData.income.map((item, idx) => (
-                  <tr key={idx} className="hover:bg-slate-50">
-                    <td className="px-6 py-3 font-medium text-slate-600">{item.category}</td>
-                    <td className="px-6 py-3 text-slate-800">{item.item}</td>
-                    <td className="px-6 py-3 text-right text-green-600 font-medium">{item.amount.toLocaleString()}</td>
-                    <td className="px-6 py-3 text-slate-500 text-xs">{item.note}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const RegistrationTab = () => {
-  return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden animate-in fade-in duration-300">
-      <div className="bg-slate-50 px-6 py-4 border-b border-slate-200">
-        <h3 className="font-bold text-slate-800">社團課程報名狀況</h3>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left whitespace-nowrap">
-          <thead className="text-xs text-slate-500 bg-slate-100 border-b border-slate-200">
-            <tr>
-              <th className="px-6 py-4 font-semibold sticky left-0 bg-slate-100 z-10 w-20">#</th>
-              <th className="px-6 py-4 font-semibold sticky left-20 bg-slate-100 z-10">社團名單</th>
-              {courseData.columns.map(col => (
-                <th key={col.id} className="px-6 py-4 font-semibold text-center bg-blue-50/50 border-l border-slate-200">
-                  {col.name}
-                  <div className="text-[10px] text-blue-600 mt-1 font-normal">已報名 / 收費</div>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {courseData.members.map((member, idx) => (
-              <tr key={idx} className="hover:bg-slate-50 transition-colors">
-                <td className="px-6 py-3 text-slate-400 sticky left-0 bg-white group-hover:bg-slate-50">{idx + 1}</td>
-                <td className="px-6 py-3 font-medium text-slate-800 sticky left-20 bg-white group-hover:bg-slate-50">
-                  {member.name}
-                </td>
-                <td className="px-6 py-3 text-center border-l border-slate-100">
-                  {member.c1 ? <span className="inline-block px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-semibold">${member.c1}</span> : <span className="text-slate-300">-</span>}
-                </td>
-                <td className="px-6 py-3 text-center border-l border-slate-100">
-                  {member.c2 ? <span className="inline-block px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-semibold">${member.c2}</span> : <span className="text-slate-300">-</span>}
-                </td>
-                <td className="px-6 py-3 text-center border-l border-slate-100">
-                  {member.c3 !== null && member.c3 > 0 ? <span className="inline-block px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-semibold">${member.c3}</span> : <span className="text-slate-300">-</span>}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-          <tfoot className="bg-slate-50 border-t-2 border-slate-200 font-semibold text-slate-800">
-            <tr>
-              <td colSpan="2" className="px-6 py-4 text-right sticky left-0 bg-slate-50">總計收費：</td>
-              <td className="px-6 py-4 text-center text-blue-700 border-l border-slate-200">${courseData.totals.c1.toLocaleString()}</td>
-              <td className="px-6 py-4 text-center text-blue-700 border-l border-slate-200">${courseData.totals.c2.toLocaleString()}</td>
-              <td className="px-6 py-4 text-center text-blue-700 border-l border-slate-200">${courseData.totals.c3.toLocaleString()}</td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-    </div>
-  );
-};
-
-const InvoiceTab = () => {
-  const daTiaoTotal = invoiceData.march.daTiao.reduce((sum, item) => sum + item.amount, 0);
-  const ouDouKTotal = invoiceData.march.ouDouK.reduce((sum, item) => sum + item.amount, 0);
-  
-  // 假設總預算 4000 是一半給大跳，一半給歐豆K？從原圖看邏輯是合併還是分開？
-  // 根據原圖：「缺：-933」和「缺：-27」，總預算4000，大跳總共4933(-933)，歐豆K總共4027(-27)
-  
-  return (
-    <div className="space-y-6 animate-in fade-in duration-300">
-      {/* 抬頭資訊 */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl p-6 text-white shadow-md flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold mb-2">抬頭：{invoiceData.company.name}</h2>
-          <p className="text-blue-100 text-lg flex items-center gap-2">
-            <Receipt size={20} />
-            統編：<span className="font-mono bg-white/20 px-2 py-1 rounded">{invoiceData.company.taxId}</span>
-          </p>
-        </div>
-        <div className="hidden md:block opacity-20">
-          <FileText size={80} />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* 3月核銷 */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden md:col-span-2">
-          <div className="bg-blue-50 px-6 py-4 border-b border-blue-100 flex justify-between items-center">
-            <h3 className="font-bold text-blue-900">3月 / 社團補助金 4,000元</h3>
-          </div>
-          <div className="flex flex-col sm:flex-row">
-            {/* 大跳發票 */}
-            <div className="flex-1 p-0 border-r border-slate-100">
-              <div className="bg-slate-50 px-4 py-2 border-b border-slate-100 text-sm font-semibold text-slate-600 text-center">大跳發票</div>
-              <ul className="divide-y divide-slate-100">
-                {invoiceData.march.daTiao.map((item) => (
-                  <li key={`da-${item.id}`} className="px-4 py-3 flex justify-between text-sm hover:bg-slate-50">
-                    <span className="text-slate-400 w-6">{item.id}.</span>
-                    <span className="font-medium text-slate-800">${item.amount.toLocaleString()}</span>
-                    <span className="text-slate-500 w-16 text-right">{item.payer}</span>
-                  </li>
-                ))}
-              </ul>
-              <div className="bg-slate-50 px-4 py-3 flex justify-between items-center border-t border-slate-200 mt-auto">
-                <span className="font-bold text-slate-700">總計</span>
-                <span className="font-bold text-slate-900">${daTiaoTotal.toLocaleString()}</span>
+          return (
+            <div className="space-y-6">
+              {/* 總覽卡片 */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+                  <div className="p-3 bg-red-100 text-red-600 rounded-lg"><TrendingDown size={24} /></div>
+                  <div>
+                    <p className="text-sm text-slate-500 font-medium">總計支出</p>
+                    <p className="text-2xl font-bold text-slate-800">{totalExpense.toLocaleString()}</p>
+                  </div>
+                </div>
+                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+                  <div className="p-3 bg-green-100 text-green-600 rounded-lg"><TrendingUp size={24} /></div>
+                  <div>
+                    <p className="text-sm text-slate-500 font-medium">總計收入</p>
+                    <p className="text-2xl font-bold text-slate-800">{totalIncome.toLocaleString()}</p>
+                  </div>
+                </div>
+                <div className={`p-6 rounded-xl border shadow-sm flex items-center gap-4 ${balance < 0 ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
+                  <div className={`p-3 rounded-lg ${balance < 0 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
+                    <Calculator size={24} />
+                  </div>
+                  <div>
+                    <p className={`text-sm font-medium ${balance < 0 ? 'text-red-600/80' : 'text-green-600/80'}`}>目前結餘</p>
+                    <p className={`text-2xl font-bold ${balance < 0 ? 'text-red-700' : 'text-green-700'}`}>
+                      {balance.toLocaleString()}
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div className="bg-red-50 px-4 py-2 flex justify-between items-center text-red-700 text-sm font-bold">
-                <span>超額 (缺)</span>
-                <span>{4000 - daTiaoTotal}</span>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* 支出明細 */}
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+                    <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                      支出明細
+                    </h3>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left">
+                      <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b">
+                        <tr>
+                          <th className="px-6 py-3">類別</th>
+                          <th className="px-6 py-3">項目</th>
+                          <th className="px-6 py-3 text-right">金額</th>
+                          <th className="px-6 py-3">備註</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {financeData.expenses.map((item, idx) => (
+                          <tr key={idx} className="hover:bg-slate-50">
+                            <td className="px-6 py-3 font-medium text-slate-600">{item.category}</td>
+                            <td className="px-6 py-3 text-slate-800">{item.item}</td>
+                            <td className="px-6 py-3 text-right text-red-600 font-medium">{item.amount.toLocaleString()}</td>
+                            <td className="px-6 py-3 text-slate-500 text-xs">{item.note}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* 收入明細 */}
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+                    <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                      收入與補助明細
+                    </h3>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left">
+                      <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b">
+                        <tr>
+                          <th className="px-6 py-3">類別</th>
+                          <th className="px-6 py-3">項目</th>
+                          <th className="px-6 py-3 text-right">金額</th>
+                          <th className="px-6 py-3">備註</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {financeData.income.map((item, idx) => (
+                          <tr key={idx} className="hover:bg-slate-50">
+                            <td className="px-6 py-3 font-medium text-slate-600">{item.category}</td>
+                            <td className="px-6 py-3 text-slate-800">{item.item}</td>
+                            <td className="px-6 py-3 text-right text-green-600 font-medium">{item.amount.toLocaleString()}</td>
+                            <td className="px-6 py-3 text-slate-500 text-xs">{item.note}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             </div>
+          );
+        };
 
-            {/* 歐豆K發票 */}
-            <div className="flex-1 p-0">
-              <div className="bg-slate-50 px-4 py-2 border-b border-slate-100 text-sm font-semibold text-slate-600 text-center">歐豆K發票</div>
-              <ul className="divide-y divide-slate-100">
-                {invoiceData.march.ouDouK.map((item) => (
-                  <li key={`ou-${item.id}`} className="px-4 py-3 flex justify-between text-sm hover:bg-slate-50">
-                    <span className="text-slate-400 w-6">{item.id}.</span>
-                    <span className="font-medium text-slate-800">${item.amount.toLocaleString()}</span>
-                    <span className="text-slate-500 w-16 text-right">{item.payer}</span>
-                  </li>
-                ))}
-              </ul>
-              <div className="bg-slate-50 px-4 py-3 flex justify-between items-center border-t border-slate-200 h-full mt-auto">
-                <span className="font-bold text-slate-700">總計</span>
-                <span className="font-bold text-slate-900">${ouDouKTotal.toLocaleString()}</span>
+        const RegistrationTab = () => {
+          return (
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                <h3 className="font-bold text-slate-800">社團課程報名狀況</h3>
               </div>
-              <div className="bg-red-50 px-4 py-2 flex justify-between items-center text-red-700 text-sm font-bold">
-                <span>超額 (缺)</span>
-                <span>{4000 - ouDouKTotal}</span>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left whitespace-nowrap">
+                  <thead className="text-xs text-slate-500 bg-slate-100 border-b border-slate-200">
+                    <tr>
+                      <th className="px-6 py-4 font-semibold sticky left-0 bg-slate-100 z-10 w-20">#</th>
+                      <th className="px-6 py-4 font-semibold sticky left-20 bg-slate-100 z-10">社團名單</th>
+                      {courseData.columns.map(col => (
+                        <th key={col.id} className="px-6 py-4 font-semibold text-center bg-blue-50 border-l border-slate-200">
+                          {col.name}
+                          <div className="text-[10px] text-blue-600 mt-1 font-normal">已報名 / 收費</div>
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {courseData.members.map((member, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-6 py-3 text-slate-400 sticky left-0 bg-white group-hover:bg-slate-50">{idx + 1}</td>
+                        <td className="px-6 py-3 font-medium text-slate-800 sticky left-20 bg-white group-hover:bg-slate-50">
+                          {member.name}
+                        </td>
+                        <td className="px-6 py-3 text-center border-l border-slate-100">
+                          {member.c1 ? <span className="inline-block px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-semibold">${member.c1}</span> : <span className="text-slate-300">-</span>}
+                        </td>
+                        <td className="px-6 py-3 text-center border-l border-slate-100">
+                          {member.c2 ? <span className="inline-block px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-semibold">${member.c2}</span> : <span className="text-slate-300">-</span>}
+                        </td>
+                        <td className="px-6 py-3 text-center border-l border-slate-100">
+                          {member.c3 !== null && member.c3 > 0 ? <span className="inline-block px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-semibold">${member.c3}</span> : <span className="text-slate-300">-</span>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot className="bg-slate-50 border-t-2 border-slate-200 font-semibold text-slate-800">
+                    <tr>
+                      <td colSpan="2" className="px-6 py-4 text-right sticky left-0 bg-slate-50">總計收費：</td>
+                      <td className="px-6 py-4 text-center text-blue-700 border-l border-slate-200">${courseData.totals.c1.toLocaleString()}</td>
+                      <td className="px-6 py-4 text-center text-blue-700 border-l border-slate-200">${courseData.totals.c2.toLocaleString()}</td>
+                      <td className="px-6 py-4 text-center text-blue-700 border-l border-slate-200">${courseData.totals.c3.toLocaleString()}</td>
+                    </tr>
+                  </tfoot>
+                </table>
               </div>
             </div>
-          </div>
-        </div>
+          );
+        };
 
-        {/* 4月與5月預留區塊 */}
-        <div className="space-y-6">
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden opacity-75">
-            <div className="bg-slate-100 px-6 py-4 border-b border-slate-200">
-              <h3 className="font-bold text-slate-600 text-sm">4月 / 社團博覽會補助金 1,000元</h3>
-            </div>
-            <div className="p-8 text-center text-slate-400 flex flex-col items-center">
-              <AlertCircle size={32} className="mb-2 text-slate-300" />
-              <p className="text-sm">尚未有發票紀錄</p>
-            </div>
-             <div className="bg-red-50 px-4 py-2 flex justify-between items-center text-red-600 text-sm font-bold border-t border-slate-200">
-                <span>待補 (缺)</span>
-                <span>1000</span>
+        const InvoiceTab = () => {
+          const daTiaoTotal = invoiceData.march.daTiao.reduce((sum, item) => sum + item.amount, 0);
+          const ouDouKTotal = invoiceData.march.ouDouK.reduce((sum, item) => sum + item.amount, 0);
+          
+          return (
+            <div className="space-y-6">
+              {/* 抬頭資訊 */}
+              <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl p-6 text-white shadow-md flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold mb-2">抬頭：{invoiceData.company.name}</h2>
+                  <p className="text-blue-100 text-lg flex items-center gap-2">
+                    <Receipt size={20} />
+                    統編：<span className="font-mono bg-white/20 px-2 py-1 rounded">{invoiceData.company.taxId}</span>
+                  </p>
+                </div>
+                <div className="hidden md:block opacity-20">
+                  <FileText size={80} />
+                </div>
               </div>
-          </div>
 
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden opacity-75">
-            <div className="bg-slate-100 px-6 py-4 border-b border-slate-200">
-              <h3 className="font-bold text-slate-600 text-sm">5月 / 母親節活動補助 XX元</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* 3月核銷 */}
+                <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden md:col-span-2">
+                  <div className="bg-blue-50 px-6 py-4 border-b border-blue-100 flex justify-between items-center">
+                    <h3 className="font-bold text-blue-900">3月 / 社團補助金 4,000元</h3>
+                  </div>
+                  <div className="flex flex-col sm:flex-row">
+                    {/* 大跳發票 */}
+                    <div className="flex-1 p-0 border-r border-slate-100">
+                      <div className="bg-slate-50 px-4 py-2 border-b border-slate-100 text-sm font-semibold text-slate-600 text-center">大跳發票</div>
+                      <ul className="divide-y divide-slate-100">
+                        {invoiceData.march.daTiao.map((item) => (
+                          <li key={`da-${item.id}`} className="px-4 py-3 flex justify-between text-sm hover:bg-slate-50">
+                            <span className="text-slate-400 w-6">{item.id}.</span>
+                            <span className="font-medium text-slate-800">${item.amount.toLocaleString()}</span>
+                            <span className="text-slate-500 w-16 text-right">{item.payer}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      <div className="bg-slate-50 px-4 py-3 flex justify-between items-center border-t border-slate-200 mt-auto">
+                        <span className="font-bold text-slate-700">總計</span>
+                        <span className="font-bold text-slate-900">${daTiaoTotal.toLocaleString()}</span>
+                      </div>
+                      <div className="bg-red-50 px-4 py-2 flex justify-between items-center text-red-700 text-sm font-bold">
+                        <span>超額 (缺)</span>
+                        <span>{4000 - daTiaoTotal}</span>
+                      </div>
+                    </div>
+
+                    {/* 歐豆K發票 */}
+                    <div className="flex-1 p-0">
+                      <div className="bg-slate-50 px-4 py-2 border-b border-slate-100 text-sm font-semibold text-slate-600 text-center">歐豆K發票</div>
+                      <ul className="divide-y divide-slate-100">
+                        {invoiceData.march.ouDouK.map((item) => (
+                          <li key={`ou-${item.id}`} className="px-4 py-3 flex justify-between text-sm hover:bg-slate-50">
+                            <span className="text-slate-400 w-6">{item.id}.</span>
+                            <span className="font-medium text-slate-800">${item.amount.toLocaleString()}</span>
+                            <span className="text-slate-500 w-16 text-right">{item.payer}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      <div className="bg-slate-50 px-4 py-3 flex justify-between items-center border-t border-slate-200 h-full mt-auto">
+                        <span className="font-bold text-slate-700">總計</span>
+                        <span className="font-bold text-slate-900">${ouDouKTotal.toLocaleString()}</span>
+                      </div>
+                      <div className="bg-red-50 px-4 py-2 flex justify-between items-center text-red-700 text-sm font-bold">
+                        <span>超額 (缺)</span>
+                        <span>{4000 - ouDouKTotal}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4月與5月預留區塊 */}
+                <div className="space-y-6">
+                  <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden opacity-75">
+                    <div className="bg-slate-100 px-6 py-4 border-b border-slate-200">
+                      <h3 className="font-bold text-slate-600 text-sm">4月 / 社團博覽會補助金 1,000元</h3>
+                    </div>
+                    <div className="p-8 text-center text-slate-400 flex flex-col items-center">
+                      <AlertCircle size={32} className="mb-2 text-slate-300" />
+                      <p className="text-sm">尚未有發票紀錄</p>
+                    </div>
+                     <div className="bg-red-50 px-4 py-2 flex justify-between items-center text-red-600 text-sm font-bold border-t border-slate-200">
+                        <span>待補 (缺)</span>
+                        <span>1000</span>
+                      </div>
+                  </div>
+
+                  <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden opacity-75">
+                    <div className="bg-slate-100 px-6 py-4 border-b border-slate-200">
+                      <h3 className="font-bold text-slate-600 text-sm">5月 / 母親節活動補助 XX元</h3>
+                    </div>
+                    <div className="p-8 text-center text-slate-400 flex flex-col items-center">
+                      <AlertCircle size={32} className="mb-2 text-slate-300" />
+                      <p className="text-sm">尚未有發票紀錄</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="p-8 text-center text-slate-400 flex flex-col items-center">
-              <AlertCircle size={32} className="mb-2 text-slate-300" />
-              <p className="text-sm">尚未有發票紀錄</p>
+          );
+        };
+
+        const App = () => {
+          const [activeTab, setActiveTab] = useState('finance');
+
+          return (
+            <div className="min-h-screen bg-slate-50 text-slate-800 font-sans p-4 md:p-8">
+              <div className="max-w-6xl mx-auto space-y-6">
+                
+                {/* Header */}
+                <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-6 border-b border-slate-200">
+                  <div>
+                    <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">社團財務與管理系統</h1>
+                    <p className="text-slate-500 mt-2">統整財務報表、課程報名與經費核銷進度</p>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-slate-500 bg-white px-3 py-1.5 rounded-full border border-slate-200 shadow-sm">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                    </span>
+                    系統資料已同步
+                  </div>
+                </header>
+
+                {/* Navigation Tabs */}
+                <nav className="flex overflow-x-auto bg-white rounded-xl border border-slate-200 shadow-sm">
+                  <TabButton 
+                    active={activeTab === 'finance'} 
+                    onClick={() => setActiveTab('finance')} 
+                    icon={DollarSign} 
+                    label="財務總表" 
+                  />
+                  <TabButton 
+                    active={activeTab === 'registration'} 
+                    onClick={() => setActiveTab('registration')} 
+                    icon={Users} 
+                    label="課程報名" 
+                  />
+                  <TabButton 
+                    active={activeTab === 'invoice'} 
+                    onClick={() => setActiveTab('invoice')} 
+                    icon={FileText} 
+                    label="經費核銷明細" 
+                  />
+                </nav>
+
+                {/* Main Content Area */}
+                <main className="pt-2 pb-12">
+                  {activeTab === 'finance' && <FinanceTab />}
+                  {activeTab === 'registration' && <RegistrationTab />}
+                  {activeTab === 'invoice' && <InvoiceTab />}
+                </main>
+                
+              </div>
             </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+          );
+        };
 
-export default function App() {
-  const [activeTab, setActiveTab] = useState('finance');
-
-  return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans p-4 md:p-8">
-      <div className="max-w-6xl mx-auto space-y-6">
-        
-        {/* Header */}
-        <header className="flex flex-col md:flex-row md:items-end justify-between gap-4 pb-6 border-b border-slate-200">
-          <div>
-            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">社團財務與管理系統</h1>
-            <p className="text-slate-500 mt-2">統整財務報表、課程報名與經費核銷進度</p>
-          </div>
-          <div className="flex items-center gap-2 text-sm text-slate-500 bg-white px-3 py-1.5 rounded-full border border-slate-200 shadow-sm">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-            </span>
-            系統資料已同步
-          </div>
-        </header>
-
-        {/* Navigation Tabs */}
-        <nav className="flex overflow-x-auto hide-scrollbar bg-white rounded-xl border border-slate-200 shadow-sm">
-          <TabButton 
-            active={activeTab === 'finance'} 
-            onClick={() => setActiveTab('finance')} 
-            icon={DollarSign} 
-            label="財務總表" 
-          />
-          <TabButton 
-            active={activeTab === 'registration'} 
-            onClick={() => setActiveTab('registration')} 
-            icon={Users} 
-            label="課程報名" 
-          />
-          <TabButton 
-            active={activeTab === 'invoice'} 
-            onClick={() => setActiveTab('invoice')} 
-            icon={FileText} 
-            label="經費核銷明細" 
-          />
-        </nav>
-
-        {/* Main Content Area */}
-        <main className="pt-2 pb-12">
-          {activeTab === 'finance' && <FinanceTab />}
-          {activeTab === 'registration' && <RegistrationTab />}
-          {activeTab === 'invoice' && <InvoiceTab />}
-        </main>
-        
-      </div>
-    </div>
-  );
-}
+        // 啟動 React 應用程式
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
