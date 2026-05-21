@@ -5,17 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>社團財務與管理系統</title>
     
-    <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- 引入 React 與 ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     
-    <!-- 引入 Babel 讓瀏覽器可以即時編譯 JSX 語法 -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- 🌟 引入 Firebase -->
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
       import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -92,8 +88,17 @@
 
           return {
             finance: {
-              expenses: [],
-              income: []
+              expenses: [
+                { category: '老師費用', item: 'CaRu課費 第一堂15人', amount: -6000, note: '', isPaid: false, club: '共用' },
+                { category: '場地租金', item: '3/11-Sooo dance A教室', amount: -900, note: '', isPaid: true, club: '大跳社' },
+                { category: '場地租金', item: 'Mimix教室', amount: -1500, note: '$500 x 3 小時', isPaid: true, club: '大跳社' },
+                { category: '場地租金', item: 'Mimix教室', amount: -2000, note: '$500 x 4 小時', isPaid: true, club: '歐豆K社' },
+                { category: '老師費用', item: '阿默課費', amount: -12000, note: '$3000 x 4 堂 (尚未付款)', isPaid: false, club: '大跳社' }
+              ],
+              income: [
+                { category: '課費', item: '預計課費', amount: 23120, note: '9堂10人收280', isReceived: false, club: '共用' },
+                { category: '福委補助款', item: '福委固定補助金', amount: 8000, note: '', isReceived: true, club: '共用' }
+              ]
             },
             course: {
               columns: [
@@ -108,7 +113,7 @@
                 { id: 'c9', name: '11/3 基礎養成', memberPrice: 150, nonMemberPrice: 400 }, 
                 { id: 'c10', name: '12/1 K-POP', memberPrice: 150, nonMemberPrice: 400 }
               ],
-              members: [] // 完全空白，手動新增
+              members: [] 
             },
             invoice: {
               company: { name: '天茂企管顧問有限公司', taxId: '89177254' },
@@ -123,6 +128,27 @@
 
         const defaultData = generateDefaultData();
 
+        // --- Gemini API 整合 ---
+        const callGeminiAPI = async (prompt) => {
+          const apiKey = ""; 
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+          const payload = { contents: [{ parts: [{ text: prompt }] }] };
+          const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+          const backoff = [1000, 2000, 4000, 8000, 16000];
+
+          for (let i = 0; i < backoff.length; i++) {
+              try {
+                  const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                  if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                  const result = await response.json();
+                  return result.candidates?.[0]?.content?.parts?.[0]?.text || "無法生成回應";
+              } catch (error) {
+                  if (i === backoff.length - 1) throw new Error("API呼叫失敗，請稍後再試。");
+                  await sleep(backoff[i]);
+              }
+          }
+        };
+
         // --- 元件：財務總表 ---
         const FinanceTab = ({ data, isEditing, setData }) => {
           const totalExpense = data.finance.expenses.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
@@ -135,13 +161,13 @@
           const daTiaoIncome = data.finance.income.filter(i => i.club === '大跳社').reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
           const ouDouKIncome = data.finance.income.filter(i => i.club === '歐豆K社').reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
           
-          const pinYinTotal = Math.abs(data.finance.expenses
-            .filter(item => item.isPinYinPaid)
-            .reduce((sum, item) => sum + (Number(item.amount) || 0), 0));
+          // 實際現金流與待辦款項計算
+          const receivedIncome = data.finance.income.filter(item => item.isReceived).reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+          const paidExpense = data.finance.expenses.filter(item => item.isPaid).reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+          const availableCash = receivedIncome + paidExpense;
 
-          const pendingReceiptTotal = data.finance.income
-            .filter(item => !item.isReceived)
-            .reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+          const pendingIncome = data.finance.income.filter(item => !item.isReceived).reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
+          const pendingExpense = Math.abs(data.finance.expenses.filter(item => !item.isPaid).reduce((sum, item) => sum + (Number(item.amount) || 0), 0));
 
           const handleChange = (type, index, field, value) => {
             const newData = JSON.parse(JSON.stringify(data));
@@ -152,7 +178,7 @@
           const addRow = (type) => {
             const newData = JSON.parse(JSON.stringify(data));
             if (type === 'expenses') {
-                newData.finance.expenses.push({ category: '', item: '', amount: 0, note: '', isPinYinPaid: false, club: '共用' });
+                newData.finance.expenses.push({ category: '', item: '', amount: 0, note: '', isPaid: true, club: '共用' });
             } else {
                 newData.finance.income.push({ category: '', item: '', amount: 0, note: '', isReceived: false, club: '共用' });
             }
@@ -176,6 +202,28 @@
             setData(newData);
           };
 
+          const handleCalibrateCash = () => {
+            const actualCashStr = prompt(`系統目前計算的公費袋餘額為：$${availableCash.toLocaleString()}\n請輸入您目前【實際的公費袋現金】：`, availableCash);
+            if (actualCashStr === null) return;
+            const actualCash = Number(actualCashStr);
+            if (isNaN(actualCash)) return alert("請輸入有效的數字！");
+            
+            const difference = actualCash - availableCash;
+            if (difference === 0) return alert("現金與系統完全吻合，無需校正！");
+            
+            const newData = JSON.parse(JSON.stringify(data));
+            newData.finance.income.push({
+                category: '系統校正',
+                item: `現金盤點差額補齊`,
+                amount: difference,
+                note: '自動校正',
+                isReceived: true,
+                club: '共用'
+            });
+            setData(newData);
+            alert(`已為您新增一筆 ${difference > 0 ? '+' : ''}${difference} 元的紀錄，公費袋已更新為 ${actualCash} 元！記得點擊右上角的「儲存變更」。`);
+          };
+
           const Input = ({ val, field, index, type }) => (
             isEditing ? 
             <input type="text" value={val} onChange={(e) => handleChange(type, index, field, e.target.value)} 
@@ -192,69 +240,47 @@
 
           return (
             <div className="space-y-8 animate-in fade-in duration-300">
+              {/* 新版營運資金看板 */}
               <div>
                 <h3 className="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2">
-                  <Briefcase size={22} className="text-blue-600"/> 社團營運帳戶
+                  <Wallet size={22} className="text-blue-600"/> 社團資金與現金流概況
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  {/* 實際可用資金 */}
+                  <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-6 rounded-xl shadow-md text-white flex flex-col justify-center relative group">
+                    <p className="text-blue-100 font-medium mb-1 flex items-center gap-2"><Calculator size={18} /> 實際可用資金 (公費袋)</p>
+                    <p className="text-4xl font-extrabold">${availableCash.toLocaleString()}</p>
+                    <p className="text-xs text-blue-200 mt-2">已收齊的錢 扣除 已付出去的錢</p>
+                    {isEditing && (
+                      <button onClick={handleCalibrateCash} className="absolute top-4 right-4 bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg text-xs font-bold backdrop-blur-sm transition shadow-sm">
+                        校正現金
+                      </button>
+                    )}
+                  </div>
                   
-                  {/* 總計支出卡片 */}
-                  <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-3">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-red-100 text-red-600 rounded-lg"><TrendingDown size={24} /></div>
-                      <div><p className="text-sm text-slate-500 font-medium">總計支出</p><p className="text-2xl font-bold text-slate-800">{totalExpense.toLocaleString()}</p></div>
-                    </div>
-                    {/* 新增：社團分支統計 */}
-                    <div className="flex gap-2 text-xs border-t border-slate-100 pt-3 mt-auto">
-                      <div className="flex-1 bg-blue-50/80 text-blue-700 px-2 py-1 rounded flex justify-between items-center">
-                        <span>大跳</span><span className="font-semibold">${daTiaoExpense.toLocaleString()}</span>
-                      </div>
-                      <div className="flex-1 bg-purple-50/80 text-purple-700 px-2 py-1 rounded flex justify-between items-center">
-                        <span>歐豆K</span><span className="font-semibold">${ouDouKExpense.toLocaleString()}</span>
-                      </div>
-                    </div>
+                  {/* 預期總結餘 */}
+                  <div className={`p-6 rounded-xl border shadow-sm flex flex-col justify-center ${balance < 0 ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
+                    <p className={`font-medium mb-1 flex items-center gap-2 ${balance < 0 ? 'text-red-700' : 'text-green-700'}`}><TrendingUp size={18} /> 預期總結餘 (帳面盈餘)</p>
+                    <p className={`text-4xl font-extrabold ${balance < 0 ? 'text-red-600' : 'text-green-600'}`}>${balance.toLocaleString()}</p>
+                    <p className={`text-xs mt-2 ${balance < 0 ? 'text-red-400' : 'text-green-500'}`}>若所有待收待付皆完成後的最終結餘</p>
                   </div>
-
-                  {/* 總計收入卡片 */}
-                  <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col gap-3">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 bg-green-100 text-green-600 rounded-lg"><TrendingUp size={24} /></div>
-                      <div><p className="text-sm text-slate-500 font-medium">總計收入</p><p className="text-2xl font-bold text-slate-800">{totalIncome.toLocaleString()}</p></div>
-                    </div>
-                    {/* 新增：社團分支統計 */}
-                    <div className="flex gap-2 text-xs border-t border-slate-100 pt-3 mt-auto">
-                      <div className="flex-1 bg-blue-50/80 text-blue-700 px-2 py-1 rounded flex justify-between items-center">
-                        <span>大跳</span><span className="font-semibold">${daTiaoIncome.toLocaleString()}</span>
-                      </div>
-                      <div className="flex-1 bg-purple-50/80 text-purple-700 px-2 py-1 rounded flex justify-between items-center">
-                        <span>歐豆K</span><span className="font-semibold">${ouDouKIncome.toLocaleString()}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 目前結餘卡片 */}
-                  <div className={`p-5 rounded-xl border shadow-sm flex flex-col justify-center gap-3 ${balance < 0 ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
-                    <div className="flex items-center gap-4">
-                      <div className={`p-3 rounded-lg ${balance < 0 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}><Calculator size={24} /></div>
-                      <div><p className={`text-sm font-medium ${balance < 0 ? 'text-red-600/80' : 'text-green-600/80'}`}>目前結餘</p><p className={`text-2xl font-bold ${balance < 0 ? 'text-red-700' : 'text-green-700'}`}>{balance.toLocaleString()}</p></div>
-                    </div>
-                  </div>
-
                 </div>
-              </div>
 
-              <div>
-                <h3 className="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2">
-                  <UserIcon size={22} className="text-amber-600"/> 個人帳務管理 (對帳專用)
-                </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-white p-6 rounded-xl border border-amber-200 bg-amber-50/30 shadow-sm flex items-center gap-4">
-                    <div className="p-3 bg-amber-100 text-amber-600 rounded-lg"><Wallet size={24} /></div>
-                    <div><p className="text-sm text-amber-700 font-medium">代墊總計</p><p className="text-2xl font-bold text-amber-900">${pinYinTotal.toLocaleString()}</p></div>
+                  {/* 待收款 */}
+                  <div className="bg-white p-4 rounded-xl border border-amber-200 bg-amber-50/30 shadow-sm flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-amber-100 text-amber-600 rounded-lg"><Clock size={20} /></div>
+                      <div><p className="text-xs text-amber-700 font-medium">預先算但尚未收入 (待收)</p><p className="text-xl font-bold text-amber-900">${pendingIncome.toLocaleString()}</p></div>
+                    </div>
                   </div>
-                  <div className="bg-white p-6 rounded-xl border border-blue-200 bg-blue-50/30 shadow-sm flex items-center gap-4">
-                    <div className="p-3 bg-blue-100 text-blue-600 rounded-lg"><Clock size={24} /></div>
-                    <div><p className="text-sm text-blue-700 font-medium">待收帳款總計</p><p className="text-2xl font-bold text-blue-900">${pendingReceiptTotal.toLocaleString()}</p></div>
+                  {/* 待付款 */}
+                  <div className="bg-white p-4 rounded-xl border border-rose-200 bg-rose-50/30 shadow-sm flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-rose-100 text-rose-600 rounded-lg"><TrendingDown size={20} /></div>
+                      <div><p className="text-xs text-rose-700 font-medium">預先算但尚未支付 (待付)</p><p className="text-xl font-bold text-rose-900">${pendingExpense.toLocaleString()}</p></div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -271,13 +297,13 @@
                           <th className="px-4 py-3">社團</th>
                           <th className="px-4 py-3">項目</th>
                           <th className="px-4 py-3 text-right">金額</th>
-                          <th className="px-4 py-3 text-center">代墊</th>
+                          <th className="px-4 py-3 text-center">已付</th>
                           {isEditing && <th className="px-2 py-3"></th>}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
                         {data.finance.expenses.map((item, idx) => (
-                          <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                          <tr key={idx} className={`hover:bg-slate-50 transition-colors ${!item.isPaid ? 'bg-rose-50/30' : ''}`}>
                             <td className="px-4 py-2">
                                 {isEditing ? (
                                     <select value={item.club || '共用'} onChange={(e) => handleChange('expenses', idx, 'club', e.target.value)} className="w-full px-1 py-1 border border-blue-300 rounded text-xs">
@@ -288,7 +314,7 @@
                             <td className="px-4 py-2"><Input val={item.item} field="item" index={idx} type="expenses"/></td>
                             <td className="px-4 py-2 text-right"><NumberInput val={item.amount} field="amount" index={idx} type="expenses" textClass="text-red-600"/></td>
                             <td className="px-4 py-2 text-center">
-                                <input type="checkbox" checked={item.isPinYinPaid || false} onChange={(e) => handleChange('expenses', idx, 'isPinYinPaid', e.target.checked)} disabled={!isEditing} />
+                                <input type="checkbox" checked={item.isPaid ?? true} onChange={(e) => handleChange('expenses', idx, 'isPaid', e.target.checked)} disabled={!isEditing} className="w-4 h-4 text-rose-600 rounded focus:ring-rose-500 cursor-pointer disabled:cursor-default" />
                             </td>
                             {isEditing && (
                               <td className="px-2 py-2 text-center whitespace-nowrap">
@@ -333,7 +359,11 @@
                             <td className="px-4 py-2"><Input val={item.item} field="item" index={idx} type="income"/></td>
                             <td className="px-4 py-2 text-right"><NumberInput val={item.amount} field="amount" index={idx} type="income" textClass="text-green-600"/></td>
                             <td className="px-4 py-2 text-center">
-                                <input type="checkbox" checked={item.isReceived || false} onChange={(e) => handleChange('income', idx, 'isReceived', e.target.checked)} disabled={!isEditing} />
+                                {isEditing ? (
+                                  <input type="checkbox" checked={item.isReceived || false} onChange={(e) => handleChange('income', idx, 'isReceived', e.target.checked)} className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 cursor-pointer" />
+                                ) : (
+                                  item.isReceived ? <span className="inline-block bg-green-100 text-green-700 text-[10px] px-1.5 py-0.5 rounded font-bold">已入帳</span> : <span className="text-slate-300">-</span>
+                                )}
                             </td>
                             {isEditing && (
                               <td className="px-2 py-2 text-center whitespace-nowrap">
@@ -606,6 +636,7 @@
                 <table className="w-full text-sm text-left whitespace-nowrap min-w-max">
                   <thead className="text-xs text-slate-500 bg-slate-100 border-b border-slate-200 sticky top-0 z-20">
                     <tr>
+                      {/* RWD Fix: 使用 inline style 強制設定欄位寬度，避免在手機上被擠壓導致 left 位置跑掉 */}
                       <th style={{ width: '48px', minWidth: '48px', left: '0px' }} className="px-2 py-4 font-semibold sticky bg-slate-100 z-30 border-r border-slate-200 text-center">#</th>
                       <th style={{ width: '96px', minWidth: '96px', left: '48px' }} className="px-2 py-4 font-semibold sticky bg-slate-100 z-30 border-r border-slate-200">名單</th>
                       <th style={{ width: '80px', minWidth: '80px', left: '144px' }} className="px-2 py-4 font-semibold sticky bg-slate-100 z-30 border-r border-slate-200 text-center">身分</th>
