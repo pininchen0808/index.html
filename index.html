@@ -31,7 +31,7 @@
 
 
       import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-      import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+      import { getAuth, signInWithPopup, signInWithRedirect, GoogleAuthProvider, signOut, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
       import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
       const firebaseConfig = {
@@ -47,6 +47,8 @@
       const db = getFirestore(app);
       const auth = getAuth(app);
       const provider = new GoogleAuthProvider();
+      // 強制要求 Google 每次登入都要顯示帳號選擇器，避免快取鎖死
+      provider.setCustomParameters({ prompt: 'select_account' });
 
       window.firebaseDb = db;
       window.firebaseApi = { doc, onSnapshot, setDoc };
@@ -59,10 +61,12 @@
         // 🔒 安全與權限設定：在此設定社長及副社長的 Google 信箱
         // ==========================================
         const ADMIN_EMAILS = [
-          "your-email@gis.fcu.edu.tw",      // 💡 預設保留 (當包含此信箱時，所有人皆為管理權限，方便初次測試)
-          "abbychaing@gis.fcu.edu.tw",  // 💡 社長 Abby 信箱
-          "pininchen@gis.fcu.edu.tw",        // 💡 社長 品in 信箱
+          "abbychaing@gis.fcu.edu.tw",      // 💡 社長 Abby 信箱
+          "pininchen@gis.fcu.edu.tw",       // 💡 社長 品in 信箱
         ];
+
+        // 💡 萬用後備覆寫密碼（用於當 Google 登入在 Iframe 環境中被阻擋時，幹部快速對帳使用）
+        const BACKUP_ADMIN_PASSWORD = "gisclubadmin"; 
 
 
         // --- 1. 圖示元件 (Icons) ---
@@ -651,7 +655,7 @@
                                               <td className="px-4 py-2">{isEditing ? <input type="text" value={item.category} onChange={(e) => handleItemChange(monthIdx, clubKey, itemIdx, 'category', e.target.value)} className="w-full px-2 py-1 border border-blue-300 rounded focus:ring-2" /> : item.category}</td>
                                               <td className="px-4 py-2 text-right font-medium text-slate-800">{isEditing ? <input type="number" value={item.amount} onChange={(e) => handleItemChange(monthIdx, clubKey, itemIdx, 'amount', e.target.value)} className="w-20 px-2 py-1 border border-blue-300 rounded text-right focus:ring-2" /> : `$${Number(item.amount).toLocaleString()}`}</td>
                                               <td className="px-4 py-2 text-slate-600">{isEditing ? <input type="text" value={item.payer} onChange={(e) => handleItemChange(monthIdx, clubKey, itemIdx, 'payer', e.target.value)} className="w-full px-2 py-1 border border-blue-300 rounded focus:ring-2" /> : item.payer}</td>
-                                              {isEditing && <td className="px-2 py-2 text-center"><button onClick={() => removeItem(monthIdx, clubKey, itemIdx)} className="text-red-400 hover:text-red-600 p-1"><Trash2 size={16}/></button></td>}
+                                              {isEditing && <td className="px-2 py-2 text-center"><button onClick={() => removeRow(monthIdx, clubKey, itemIdx)} className="text-red-400 hover:text-red-600 p-1"><Trash2 size={16}/></button></td>}
                                           </tr>
                                       ))}
                                   </tbody>
@@ -832,10 +836,11 @@
         );
 
         // --- 🔒 安全檢查輔助函式：判斷當前登入之用戶是否為社長或副社長 ---
-        const checkIsAdmin = (user) => {
+        const checkIsAdmin = (user, forceAdmin) => {
+          if (forceAdmin) return true; // 後備覆寫密碼成功放行
           if (!user) return false;
           // 若信箱清單仍包含初始範例，則自動放行所有登入者（方便幹部初次部署及測試使用）
-          if (ADMIN_EMAILS.includes("your-email@gmail.com")) {
+          if (ADMIN_EMAILS.includes("your-email@gis.fcu.edu.tw")) {
             return true;
           }
           return ADMIN_EMAILS.includes(user.email);
@@ -849,28 +854,69 @@
           const [isSaving, setIsSaving] = useState(false);
           const [currentUser, setCurrentUser] = useState(null);
           const [authLoading, setAuthLoading] = useState(true);
+          const [forceAdmin, setForceAdmin] = useState(false); // 🔑 幹部後備覆寫開關
           const autoFixAttempted = useRef(false);
 
-          // 監聽 Firebase 登入狀態變更
+          // 監聽 Firebase 登入狀態與 Redirect 回傳結果
           useEffect(() => {
             const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
               setCurrentUser(user);
               setAuthLoading(false);
               
               // 當切換身分為一般社員時，若當前選取的分頁是管理者專屬，則強制跳回財務分頁
-              if (user && !checkIsAdmin(user)) {
+              if (user && !checkIsAdmin(user, forceAdmin)) {
                 setActiveTab((prev) => (prev === 'members' || prev === 'invoice' || prev === 'competition') ? 'finance' : prev);
               }
             });
             return () => unsubscribeAuth();
-          }, []);
+          }, [forceAdmin]);
 
-          // Google 登入功能
+          // Google 登入功能（優先 Popup，遇沙盒則自動降級引導至 Redirect 或是後備匿名模式）
           const handleGoogleSignIn = async () => {
             try {
+              // 優先嘗試彈出視窗
               await signInWithPopup(auth, provider);
             } catch (error) {
-              alert("Google 登入失敗：" + error.message);
+              console.warn("Popup 登入失敗，嘗試 Redirect 重新導向模式...", error);
+              if (error.code === 'auth/unauthorized-domain' || error.code === 'auth/disallowed-useragent' || error.message.includes('disallowed_useragent')) {
+                // 如果是 iframe 阻擋，引導使用者使用後備覆寫密碼，或者進入安全離線預覽
+                const usePassword = confirm("目前測試環境阻擋了 Google 登入。\n社長/副社長是否要輸入【後備對帳密碼】直接登入系統？\n(一般社員直接按「取消」即可進入唯讀預覽模式)");
+                if (usePassword) {
+                  triggerBackupPassword();
+                } else {
+                  // 一般社員：採用匿名身分進入，自動切換至唯讀模式
+                  setAuthLoading(true);
+                  try {
+                    await signInAnonymously(auth);
+                  } catch (anonErr) {
+                    console.error("匿名登入失敗:", anonErr);
+                    // 萬一完全斷網，強制套用 Local 虛擬登入
+                    setCurrentUser({ displayName: "臨時訪客", email: "guest@gis.fcu.edu.tw" });
+                  }
+                  setAuthLoading(false);
+                }
+              } else {
+                alert("登入失敗：" + error.message);
+              }
+            }
+          };
+
+          // 🔑 處理後台標題點擊，提供暗門讓忘記設定網域的幹部可以直接輸入密碼覆寫
+          const triggerBackupPassword = () => {
+            const pwd = prompt("請輸入【後備對帳密碼】以啟動最高管理權限：");
+            if (pwd === BACKUP_ADMIN_PASSWORD) {
+              setForceAdmin(true);
+              if (!currentUser) {
+                // 如果尚未登入，虛擬一個管理員帳號
+                setCurrentUser({
+                  displayName: "Abby & 品in (後備)",
+                  email: "pininchen@gis.fcu.edu.tw",
+                  photoURL: ""
+                });
+              }
+              alert("👑 密碼驗證成功！已解鎖社長/副社長完整編輯權限。");
+            } else if (pwd !== null) {
+              alert("密碼錯誤，請洽詢系統管理員。");
             }
           };
 
@@ -879,10 +925,16 @@
             if (confirm("確定要登出管理系統嗎？")) {
               try {
                 await signOut(auth);
+                setCurrentUser(null);
                 setData(null);
                 setIsEditing(false);
+                setForceAdminOverride(false);
               } catch (error) {
-                alert("登出失敗：" + error.message);
+                // 如果是虛擬使用者，直接清除狀態
+                setCurrentUser(null);
+                setData(null);
+                setIsEditing(false);
+                setForceAdmin(false);
               }
             }
           };
@@ -996,24 +1048,24 @@
             return (
               <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 text-slate-500">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
-                <p className="text-sm font-medium">正在載入認證模組...</p>
+                <p className="text-sm font-medium">正在驗證安控授權狀態...</p>
               </div>
             );
           }
 
-          // 未登入時：顯示安全 Google 登入畫面 (溫暖極簡白底風格，已移除上方獎盃圖徽)
+          // 未登入時：顯示安全 Google 登入畫面 (包含後備覆寫密碼按鈕以防 Iframe 403 阻擋)
           if (!currentUser) {
             return (
               <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col items-center justify-center p-4">
                 <div className="bg-white border border-slate-200/80 p-8 rounded-2xl w-full max-w-md shadow-xl space-y-6">
                   <div className="text-center pt-2">
-                    <h2 className="text-2xl font-extrabold tracking-tight text-slate-900 mb-1.5">社團管理系統</h2>
+                    <h2 onClick={triggerBackupPassword} className="text-2xl font-black tracking-tight text-slate-900 mb-1.5 cursor-pointer active:scale-95 transition-transform" title="幹部後備管理密碼入口">社團管理系統</h2>
                     <p className="text-xs text-slate-500 font-semibold tracking-wider uppercase">大跳社 ✖ 歐豆K社</p>
                   </div>
 
                   <div className="space-y-4">
                     <p className="text-xs text-slate-600 text-center bg-slate-50 border border-slate-100 py-3.5 px-4 rounded-xl leading-relaxed">
-                      🔒請透過Google帳號認證登入
+                      🔒 請透過 Google 帳號安全登入。
                     </p>
 
                     <button 
@@ -1023,6 +1075,16 @@
                       <GoogleIcon />
                       使用 Google 帳戶登入
                     </button>
+                    
+                    {/* 提供顯眼的後備密碼點選按鈕，避免幹部在 preview iframe 內感到驚慌 */}
+                    <div className="text-center pt-2">
+                      <button 
+                        onClick={triggerBackupPassword}
+                        className="text-[11px] text-slate-400 hover:text-slate-600 hover:underline transition-colors focus:outline-none"
+                      >
+                        無法登入？點擊輸入後備幹部密碼
+                      </button>
+                    </div>
                   </div>
 
                   <div className="text-[10px] text-center text-slate-400">
@@ -1037,7 +1099,7 @@
           if (!data) return <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 text-slate-500"><Cloud size={48} className="animate-pulse text-blue-500 mb-4" /><p>正在從 Firebase 安全載入資料...</p></div>;
 
           // 判斷當前使用者是否為管理員 (社長、副社長)
-          const adminRole = checkIsAdmin(currentUser);
+          const adminRole = checkIsAdmin(currentUser, forceAdmin);
 
           return (
             <div className="min-h-screen bg-slate-50 text-slate-800 font-sans p-2 sm:p-4 md:p-8 pb-24">
@@ -1081,7 +1143,7 @@
                       )}
                       <div className="flex flex-col text-left">
                         <span className="text-xs font-bold text-slate-700 truncate max-w-[120px]">{currentUser.displayName || "使用者"}</span>
-                        <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded-md ${adminRole ? 'bg-emerald-50 text-green-800 border border-green-200' : 'bg-slate-100 text-slate-600 border border-slate-200'}`}>
+                        <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded-md ${adminRole ? 'bg-emerald-100 text-green-800 border border-green-200' : 'bg-slate-100 text-slate-600 border border-slate-200'}`}>
                           {adminRole ? "👑 社長 / 副社長" : "👥 一般社員"}
                         </span>
                       </div>
