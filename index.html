@@ -930,7 +930,6 @@
         const VideoTab = ({ data, isEditing, setData, isAdmin }) => {
           const driveFolderId = "1HJXojb5ZtgDGOsVU0hrVgmXHQ_RxrwxY";
           const driveLink = `https://drive.google.com/drive/folders/${driveFolderId}?usp=drive_link`;
-          const embeddedFolderUrl = `https://drive.google.com/embeddedfolderview?id=${driveFolderId}#grid`;
           const videos = data.videos || [];
 
           const addVideo = () => {
@@ -957,12 +956,17 @@
 
           return (
               <div className="space-y-6 animate-in fade-in duration-300">
-                  {/* Google Drive 主區塊 */}
-                  <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                  {/* 記錄單堂課程快速連結區塊 */}
+                  <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                       <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex flex-col md:flex-row justify-between items-center gap-4">
                           <div className="text-center md:text-left">
-                              <h2 className="text-lg font-bold text-slate-800 flex items-center justify-center md:justify-start gap-2"><VideoIcon size={22} className="text-blue-600" /> 社團課程影片雲端資料庫</h2>
-                              <p className="text-slate-500 text-xs mt-1">歷屆社課與教學影片皆已直接嵌入，您可在下方直接瀏覽或點擊觀看！</p>
+                              <h3 className="font-bold text-slate-800 flex items-center justify-center md:justify-start gap-2">
+                                  <ExternalLinkIcon size={20} className="text-blue-600" /> 
+                                  社課影片連結
+                              </h3>
+                              <p className="text-slate-500 text-xs mt-1">
+                                  下表為精選社課之快速連結，點選按鈕後可直接跳轉至對應錄影。
+                              </p>
                           </div>
                           {isAdmin && (
                               <a href={driveLink} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold px-4 py-2 rounded-lg text-xs shadow-sm transition-transform active:scale-95 whitespace-nowrap">
@@ -971,25 +975,6 @@
                           )}
                       </div>
                       
-                      {/* 直接顯示資料夾區塊 */}
-                      <div className="p-4 bg-slate-100/50 border-b border-slate-200">
-                          <div className="bg-white rounded-xl overflow-hidden border border-slate-200 shadow-inner">
-                              <iframe 
-                                  src={embeddedFolderUrl} 
-                                  className="w-full h-[550px] border-none" 
-                                  allow="autoplay; encrypted-media"
-                                  title="Google Drive Folder View"
-                              ></iframe>
-                          </div>
-                      </div>
-                  </div>
-
-                  {/* 記錄單堂課程快速連結區塊 */}
-                  <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                      <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
-                          <h3 className="font-bold text-slate-800 flex items-center gap-2"><ExternalLinkIcon size={20} className="text-blue-600" /> 精選單堂影片捷徑</h3>
-                          {allowEdit && <span className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium">編輯模式：您可以新增特定影片連結供社員快速點擊</span>}
-                      </div>
                       <div className="p-4 lg:p-6">
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                               {videos.map((vid, idx) => (
@@ -1030,14 +1015,14 @@
                               {allowEdit && (
                                   <button onClick={addVideo} className="bg-white border-2 border-dashed border-blue-300 text-blue-600 hover:bg-blue-50 rounded-xl p-4 flex flex-col items-center justify-center min-h-[160px] transition-colors gap-2">
                                       <Plus size={28} />
-                                      <span className="font-bold text-sm">新增精選捷徑</span>
+                                      <span className="font-bold text-sm">新增影片捷徑</span>
                                   </button>
                               )}
                           </div>
                           {!allowEdit && videos.length === 0 && (
                               <div className="text-center py-10 bg-slate-50 rounded-xl border border-slate-100 text-slate-400 text-sm">
                                   <VideoIcon size={36} className="mx-auto mb-3 opacity-40" />
-                                  <p>目前尚無精選單堂影片捷徑，請在上方嵌入區中直接查找並下載影片。</p>
+                                  <p>目前尚無影片捷徑，請點選上方按鈕至雲端硬碟查看，或聯絡社長/副社長新增。</p>
                               </div>
                           )}
                       </div>
@@ -1237,7 +1222,7 @@
                   {/* 標題區 */}
                   <div className="text-center pt-4 pb-4 border-b border-slate-100">
                     <h2 className="text-2xl font-black tracking-tight text-slate-900 mb-1">社團聯營管理系統</h2>
-                    <p className="text-xs text-slate-500 font-semibold tracking-wider uppercase">一起大跳社 ✖ 歐豆K社</p>
+                    <p className="text-xs text-slate-500 font-semibold tracking-wider uppercase">大跳社 ✖ 歐豆K社</p>
                   </div>
 
                   {/* 登入面板內容 */}
