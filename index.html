@@ -31,7 +31,7 @@
 
 
       import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-      import { getAuth, signInWithPopup, signInWithRedirect, GoogleAuthProvider, signOut, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+      import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
       import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
       const firebaseConfig = {
@@ -58,15 +58,12 @@
         import React, { useState, useEffect , useRef  } from "react";
 
         // ==========================================
-        // 🔒 安全與權限設定：在此設定社長及副社長的 Google 信箱
+        // 🔒 系統核心管理員 (永遠擁有最高權限，可於系統內指派其他管理員)
         // ==========================================
-        const ADMIN_EMAILS = [
+        const ROOT_ADMINS = [
           "abbychaing@gis.fcu.edu.tw",      // 💡 社長 Abby 信箱
           "pininchen@gis.fcu.edu.tw",       // 💡 社長 品in 信箱
         ];
-
-        // 💡 萬用後備覆寫密碼（用於當 Google 登入在 Iframe 環境中被阻擋時，幹部快速對帳使用）
-        const BACKUP_ADMIN_PASSWORD = "gisclubadmin"; 
 
 
         // --- 1. 圖示元件 (Icons) ---
@@ -103,6 +100,11 @@
             <path fill="#EA4335" d="M12.24 10.285V14.4h6.887c-.275 1.565-1.88 4.604-6.887 4.604-4.33 0-7.866-3.577-7.866-8s3.536-8 7.866-8c2.46 0 4.105 1.025 5.047 1.926l3.227-3.11c-2.073-1.933-4.942-3.11-8.274-3.11C5.364 0 0 5.364 0 12s5.364 12 12 12c6.927 0 11.53-4.87 11.53-11.727 0-.789-.086-1.393-.19-1.988H12.24z"/>
           </svg>
         );
+        const VideoIcon = (p) => <Icon {...p} path='<polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>' />;
+        const DownloadIcon = (p) => <Icon {...p} path='<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>' />;
+        const ExternalLinkIcon = (p) => <Icon {...p} path='<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>' />;
+        const SettingsIcon = (p) => <Icon {...p} path='<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>' />;
+        const ShieldCheckIcon = (p) => <Icon {...p} path='<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/>' />;
 
         // --- 2. 預設資料生成 ---
         const generateDefaultData = () => {
@@ -119,7 +121,9 @@
             finance: { expenses: [], income: [] },
             course: { columns: [], members: [] },
             invoice: { company: { name: '天茂企管顧問有限公司', taxId: '89177254' }, months: monthsData },
-            competition: { daTiao: { newMembers: 0, activities: 0, posts: [] }, ouDouK: { newMembers: 0, activities: 0, posts: [] } }
+            competition: { daTiao: { newMembers: 0, activities: 0, posts: [] }, ouDouK: { newMembers: 0, activities: 0, posts: [] } },
+            videos: [],
+            settings: { adminEmails: [] }
           };
         };
 
@@ -823,7 +827,7 @@
                   <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
                     <h4 className="font-bold text-purple-700 mb-2 flex items-center gap-2"><FileText size={16}/> 平台發文</h4>
                     <p className="text-slate-500 mb-3 text-xs">含照片附件且字數達100字。</p>
-                    <ul className="space-y-1 text-slate-600"><li>• 1~5篇：1 分</li><li>• 6~10篇：2 分</li><li>• 11~15篇：3 分</li><li>• 16篇以上：4 分</li></ul>
+                    <ul className="space-y-1 text-slate-600"><li>• 1~5篇：1 分</li><li>• 6~10篇：2 分</li><li>• 11~15篇 : 3 分</li><li>• 16篇以上：4 分</li></ul>
                   </div>
                 </div>
               </div>
@@ -835,15 +839,208 @@
           <button onClick={onClick} className={`flex items-center gap-2 px-4 py-3 sm:px-6 sm:py-4 text-xs sm:text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${active ? 'border-blue-600 text-blue-600 bg-blue-50/50' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}><Icon size={18} className="hidden sm:block" /> {label}</button>
         );
 
-        // --- 🔒 安全檢查輔助函式：判斷當前登入之用戶是否為社長或副社長 ---
-        const checkIsAdmin = (user, forceAdmin) => {
-          if (forceAdmin) return true; // 後備覆寫密碼成功放行
+        // --- 9. 元件：系統與權限設定 ---
+        const SettingsTab = ({ data, setData }) => {
+          const [newEmail, setNewEmail] = useState('');
+          const adminEmails = data?.settings?.adminEmails || [];
+
+          const handleAddAdmin = () => {
+            if (!newEmail || !newEmail.includes('@')) return alert('請輸入有效的 Google 信箱格式！');
+            if (adminEmails.includes(newEmail) || ROOT_ADMINS.includes(newEmail)) return alert('此信箱已具備管理員權限！');
+            
+            const newData = JSON.parse(JSON.stringify(data));
+            if (!newData.settings) newData.settings = { adminEmails: [] };
+            if (!newData.settings.adminEmails) newData.settings.adminEmails = [];
+            
+            newData.settings.adminEmails.push(newEmail);
+            setData(newData);
+            setNewEmail('');
+          };
+
+          const handleRemoveAdmin = (email) => {
+            if(!confirm(`確定要移除 ${email} 的系統管理權限嗎？`)) return;
+            const newData = JSON.parse(JSON.stringify(data));
+            newData.settings.adminEmails = newData.settings.adminEmails.filter(e => e !== email);
+            setData(newData);
+          };
+
+          return (
+            <div className="space-y-6 animate-in fade-in duration-300">
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+                <div className="bg-slate-50 px-6 py-4 border-b border-slate-200">
+                  <h3 className="font-bold text-slate-800 flex items-center gap-2"><ShieldCheckIcon size={20} className="text-emerald-600" /> 管理員權限指派</h3>
+                  <p className="text-xs text-slate-500 mt-1">您可以動態授權其他 Google 帳戶具備編輯財務與行政資料的最高權限。</p>
+                </div>
+                
+                <div className="p-6 space-y-6">
+                  {/* 新增管理員 */}
+                  <div className="flex flex-col md:flex-row gap-3">
+                    <input 
+                      type="email" 
+                      value={newEmail} 
+                      onChange={(e) => setNewEmail(e.target.value)} 
+                      placeholder="輸入欲授權的 Google 信箱 (例如: example@gmail.com)" 
+                      className="flex-1 px-4 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <button 
+                      onClick={handleAddAdmin} 
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-xl font-bold text-sm shadow-sm transition-colors whitespace-nowrap flex items-center justify-center gap-2"
+                    >
+                      <Plus size={16} /> 授權此帳號
+                    </button>
+                  </div>
+
+                  {/* 管理員列表 */}
+                  <div className="border border-slate-200 rounded-xl overflow-hidden">
+                    <table className="w-full text-sm text-left">
+                      <thead className="text-xs text-slate-500 bg-slate-50 border-b border-slate-200">
+                        <tr>
+                          <th className="px-6 py-3">Google 授權信箱</th>
+                          <th className="px-6 py-3 w-32 text-center">身分層級</th>
+                          <th className="px-6 py-3 w-24 text-center">操作</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {ROOT_ADMINS.map(email => (
+                          <tr key={email} className="bg-slate-50/50">
+                            <td className="px-6 py-4 font-bold text-slate-700">{email}</td>
+                            <td className="px-6 py-4 text-center"><span className="bg-indigo-100 text-indigo-800 text-[10px] font-bold px-2 py-1 rounded">系統核心管理員</span></td>
+                            <td className="px-6 py-4 text-center text-xs text-slate-400">不可移除</td>
+                          </tr>
+                        ))}
+                        {adminEmails.map(email => (
+                          <tr key={email} className="hover:bg-slate-50">
+                            <td className="px-6 py-4 font-medium text-slate-700">{email}</td>
+                            <td className="px-6 py-4 text-center"><span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-1 rounded">動態授權幹部</span></td>
+                            <td className="px-6 py-4 text-center">
+                              <button onClick={() => handleRemoveAdmin(email)} className="text-red-400 hover:text-red-600 transition-colors p-1" title="移除權限"><Trash2 size={16}/></button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        // --- 8. 元件：課程影片下載 ---
+        const VideoTab = ({ data, isEditing, setData, isAdmin }) => {
+          const driveLink = "https://drive.google.com/drive/folders/1HJXojb5ZtgDGOsVU0hrVgmXHQ_RxrwxY?usp=drive_link";
+          const videos = data.videos || [];
+
+          const addVideo = () => {
+              const newData = JSON.parse(JSON.stringify(data));
+              if (!newData.videos) newData.videos = [];
+              newData.videos.push({ id: `v_${Date.now()}`, title: '', date: new Date().toISOString().split('T')[0], link: '' });
+              setData(newData);
+          };
+
+          const removeVideo = (idx) => {
+              if(!confirm("確定要刪除這個影片捷徑嗎？")) return;
+              const newData = JSON.parse(JSON.stringify(data));
+              newData.videos.splice(idx, 1);
+              setData(newData);
+          };
+
+          const handleVideoChange = (idx, field, value) => {
+              const newData = JSON.parse(JSON.stringify(data));
+              newData.videos[idx][field] = value;
+              setData(newData);
+          };
+
+          const allowEdit = isAdmin ? isEditing : false;
+
+          return (
+              <div className="space-y-6 animate-in fade-in duration-300">
+                  {/* Google Drive 主區塊 */}
+                  <div className="bg-gradient-to-r from-indigo-600 to-blue-700 text-white rounded-xl p-6 md:p-8 shadow-md flex flex-col md:flex-row items-center justify-between gap-6">
+                      <div className="text-center md:text-left">
+                          <h2 className="text-2xl font-bold flex items-center justify-center md:justify-start gap-2 mb-2"><VideoIcon size={28} /> 社團課程影片雲端資料庫</h2>
+                          <p className="text-blue-100 text-sm">歷屆社課與教學影片皆統一存放於專屬 Google Drive 中。</p>
+                          {isAdmin && (
+                              <p className="text-amber-200 text-xs mt-3 bg-black/20 inline-block px-3 py-1.5 rounded-md">
+                                  👑 管理員提示：請點擊右方按鈕前往雲端上傳。上傳後可於下方建立單堂課捷徑。
+                              </p>
+                          )}
+                      </div>
+                      <a href={driveLink} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-white text-indigo-700 hover:bg-blue-50 font-bold px-8 py-3.5 rounded-xl shadow-lg transition-transform active:scale-95 whitespace-nowrap">
+                          {isAdmin ? <><Plus size={18} /> 前往上傳影片</> : <><DownloadIcon size={18} /> 進入雲端下載</>}
+                      </a>
+                  </div>
+
+                  {/* 記錄單堂課程快速連結區塊 */}
+                  <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                      <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+                          <h3 className="font-bold text-slate-800 flex items-center gap-2"><ExternalLinkIcon size={20} className="text-blue-600" /> 單堂課程影片捷徑</h3>
+                          {allowEdit && <span className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium">編輯模式：您可以新增特定影片連結供社員快速點擊</span>}
+                      </div>
+                      <div className="p-4 lg:p-6">
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                              {videos.map((vid, idx) => (
+                                  <div key={vid.id} className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col relative group">
+                                      {allowEdit && (
+                                          <button onClick={() => removeVideo(idx)} className="absolute top-2 right-2 text-slate-400 hover:text-red-500 bg-white rounded-full p-1.5 shadow-sm border border-slate-100 z-10"><Trash2 size={14}/></button>
+                                      )}
+                                      <div className="mb-4 space-y-2 flex-grow mt-1">
+                                          {allowEdit ? (
+                                              <>
+                                                  <div>
+                                                      <label className="text-[10px] text-slate-500 font-semibold mb-0.5 block">課程日期</label>
+                                                      <input type="date" value={vid.date} onChange={(e) => handleVideoChange(idx, 'date', e.target.value)} className="w-full text-xs p-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500" />
+                                                  </div>
+                                                  <div>
+                                                      <label className="text-[10px] text-slate-500 font-semibold mb-0.5 block">課程標題</label>
+                                                      <input type="text" value={vid.title} onChange={(e) => handleVideoChange(idx, 'title', e.target.value)} placeholder="如: 基礎律動與爵士" className="w-full text-sm p-1.5 border border-slate-300 rounded font-bold focus:ring-1 focus:ring-blue-500" />
+                                                  </div>
+                                                  <div>
+                                                      <label className="text-[10px] text-slate-500 font-semibold mb-0.5 block">雲端影片網址</label>
+                                                      <input type="text" value={vid.link} onChange={(e) => handleVideoChange(idx, 'link', e.target.value)} placeholder="貼上 Google Drive 檔案連結" className="w-full text-xs p-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-blue-500" />
+                                                  </div>
+                                              </>
+                                          ) : (
+                                              <>
+                                                  <span className="inline-block bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded">{vid.date || '無日期'}</span>
+                                                  <h4 className="font-bold text-slate-800 text-base line-clamp-2 mt-1.5">{vid.title || '未命名課程'}</h4>
+                                              </>
+                                          )}
+                                      </div>
+                                      {!allowEdit && (
+                                          <a href={vid.link || driveLink} target="_blank" rel="noopener noreferrer" className="mt-auto flex items-center justify-center gap-1.5 w-full bg-slate-800 hover:bg-slate-700 text-white py-2 rounded-lg text-sm font-medium transition-colors shadow-sm">
+                                              <VideoIcon size={16} /> 觀看 / 下載
+                                          </a>
+                                      )}
+                                  </div>
+                              ))}
+                              {allowEdit && (
+                                  <button onClick={addVideo} className="bg-white border-2 border-dashed border-blue-300 text-blue-600 hover:bg-blue-50 rounded-xl p-4 flex flex-col items-center justify-center min-h-[160px] transition-colors gap-2">
+                                      <Plus size={28} />
+                                      <span className="font-bold text-sm">新增影片捷徑</span>
+                                  </button>
+                              )}
+                          </div>
+                          {!allowEdit && videos.length === 0 && (
+                              <div className="text-center py-10 bg-slate-50 rounded-xl border border-slate-100 text-slate-400 text-sm">
+                                  <VideoIcon size={36} className="mx-auto mb-3 opacity-40" />
+                                  <p>目前尚無單堂課程捷徑，請點擊上方按鈕進入雲端硬碟查看所有影片。</p>
+                              </div>
+                          )}
+                      </div>
+                  </div>
+              </div>
+          );
+        };
+
+        // --- 🔒 安全檢查輔助函式：動態判斷當前登入之用戶是否為管理員 ---
+        const checkIsAdmin = (user, appData) => {
           if (!user) return false;
-          // 若信箱清單仍包含初始範例，則自動放行所有登入者（方便幹部初次部署及測試使用）
-          if (ADMIN_EMAILS.includes("your-email@gis.fcu.edu.tw")) {
-            return true;
-          }
-          return ADMIN_EMAILS.includes(user.email);
+          // 檢查是否為核心管理員
+          if (ROOT_ADMINS.includes(user.email)) return true;
+          // 檢查是否為動態設定的管理員
+          if (appData?.settings?.adminEmails && appData.settings.adminEmails.includes(user.email)) return true;
+          return false;
         };
 
         // --- 8. 主應用程式 (App) 與自動修復邏輯 ---
@@ -854,70 +1051,32 @@
           const [isSaving, setIsSaving] = useState(false);
           const [currentUser, setCurrentUser] = useState(null);
           const [authLoading, setAuthLoading] = useState(true);
-          const [forceAdmin, setForceAdmin] = useState(false); // 🔑 幹部後備覆寫開關
           const autoFixAttempted = useRef(false);
 
-          // 監聽 Firebase 登入狀態與 Redirect 回傳結果
+          // 監聽 Firebase 登入狀態變更
           useEffect(() => {
             const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
               setCurrentUser(user);
               setAuthLoading(false);
               
               // 當切換身分為一般社員時，若當前選取的分頁是管理者專屬，則強制跳回財務分頁
-              if (user && !checkIsAdmin(user, forceAdmin)) {
-                setActiveTab((prev) => (prev === 'members' || prev === 'invoice' || prev === 'competition') ? 'finance' : prev);
+              if (user && data && !checkIsAdmin(user, data)) {
+                setActiveTab((prev) => (prev === 'members' || prev === 'invoice' || prev === 'competition' || prev === 'settings') ? 'finance' : prev);
               }
             });
             return () => unsubscribeAuth();
-          }, [forceAdmin]);
+          }, [data]);
 
-          // Google 登入功能（優先 Popup，遇沙盒則自動降級引導至 Redirect 或是後備匿名模式）
+          // 所有成員皆使用 Google 登入
           const handleGoogleSignIn = async () => {
+            setAuthLoading(true);
             try {
-              // 優先嘗試彈出視窗
               await signInWithPopup(auth, provider);
             } catch (error) {
-              console.warn("Popup 登入失敗，嘗試 Redirect 重新導向模式...", error);
-              if (error.code === 'auth/unauthorized-domain' || error.code === 'auth/disallowed-useragent' || error.message.includes('disallowed_useragent')) {
-                // 如果是 iframe 阻擋，引導使用者使用後備覆寫密碼，或者進入安全離線預覽
-                const usePassword = confirm("目前測試環境阻擋了 Google 登入。\n社長/副社長是否要輸入【後備對帳密碼】直接登入系統？\n(一般社員直接按「取消」即可進入唯讀預覽模式)");
-                if (usePassword) {
-                  triggerBackupPassword();
-                } else {
-                  // 一般社員：採用匿名身分進入，自動切換至唯讀模式
-                  setAuthLoading(true);
-                  try {
-                    await signInAnonymously(auth);
-                  } catch (anonErr) {
-                    console.error("匿名登入失敗:", anonErr);
-                    // 萬一完全斷網，強制套用 Local 虛擬登入
-                    setCurrentUser({ displayName: "臨時訪客", email: "guest@gis.fcu.edu.tw" });
-                  }
-                  setAuthLoading(false);
-                }
-              } else {
-                alert("登入失敗：" + error.message);
-              }
+              console.warn("Popup 登入失敗...", error);
+              alert("Google 登入失敗：" + error.message);
             }
-          };
-
-          // 🔑 處理後台標題點擊，提供暗門讓忘記設定網域的幹部可以直接輸入密碼覆寫
-          const triggerBackupPassword = () => {
-            const pwd = prompt("請輸入【後備對帳密碼】以啟動最高管理權限：");
-            if (pwd === BACKUP_ADMIN_PASSWORD) {
-              setForceAdmin(true);
-              if (!currentUser) {
-                // 如果尚未登入，虛擬一個管理員帳號
-                setCurrentUser({
-                  displayName: "Abby & 品in (後備)",
-                  email: "pininchen@gis.fcu.edu.tw",
-                  photoURL: ""
-                });
-              }
-              alert("👑 密碼驗證成功！已解鎖社長/副社長完整編輯權限。");
-            } else if (pwd !== null) {
-              alert("密碼錯誤，請洽詢系統管理員。");
-            }
+            setAuthLoading(false);
           };
 
           // 登出功能
@@ -925,17 +1084,12 @@
             if (confirm("確定要登出管理系統嗎？")) {
               try {
                 await signOut(auth);
-                setCurrentUser(null);
-                setData(null);
-                setIsEditing(false);
-                setForceAdminOverride(false);
               } catch (error) {
-                // 如果是虛擬使用者，直接清除狀態
-                setCurrentUser(null);
-                setData(null);
-                setIsEditing(false);
-                setForceAdmin(false);
+                console.warn("Firebase Auth 登出失敗:", error);
               }
+              setCurrentUser(null);
+              setData(null);
+              setIsEditing(false);
             }
           };
 
@@ -998,6 +1152,14 @@
 
                   // 修復 4：缺乏競技統計與舊名轉換
                   if (!mergedData.competition) { mergedData.competition = generateDefaultData().competition; needsUpdate = true; }
+                  
+                  // 修復 5：加入影片儲存陣列
+                  if (!mergedData.videos) { mergedData.videos = []; needsUpdate = true; }
+                  
+                  // 修復 6：加入動態管理員設定
+                  if (!mergedData.settings) { mergedData.settings = { adminEmails: [] }; needsUpdate = true; }
+                  if (!mergedData.settings.adminEmails) { mergedData.settings.adminEmails = []; needsUpdate = true; }
+
                   if (mergedData.course?.members) {
                       mergedData.course.members.forEach(m => {
                           if (m.name === '品印') { m.name = '品in'; needsUpdate = true; }
@@ -1053,42 +1215,38 @@
             );
           }
 
-          // 未登入時：顯示安全 Google 登入畫面 (包含後備覆寫密碼按鈕以防 Iframe 403 阻擋)
+          // 未登入時：顯示白底統一 Google 登入卡片
           if (!currentUser) {
             return (
               <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col items-center justify-center p-4">
-                <div className="bg-white border border-slate-200/80 p-8 rounded-2xl w-full max-w-md shadow-xl space-y-6">
-                  <div className="text-center pt-2">
-                    <h2 onClick={triggerBackupPassword} className="text-2xl font-black tracking-tight text-slate-900 mb-1.5 cursor-pointer active:scale-95 transition-transform" title="幹部後備管理密碼入口">社團管理系統</h2>
-                    <p className="text-xs text-slate-500 font-semibold tracking-wider uppercase">大跳社 ✖ 歐豆K社</p>
+                <div className="bg-white border border-slate-200/80 rounded-2xl w-full max-w-md shadow-xl overflow-hidden p-6 space-y-6">
+                  
+                  {/* 標題區 */}
+                  <div className="text-center pt-4 pb-4 border-b border-slate-100">
+                    <h2 className="text-2xl font-black tracking-tight text-slate-900 mb-1">社團聯營管理系統</h2>
+                    <p className="text-xs text-slate-500 font-semibold tracking-wider uppercase">一起大跳社 ✖ 歐豆K社</p>
                   </div>
 
-                  <div className="space-y-4">
-                    <p className="text-xs text-slate-600 text-center bg-slate-50 border border-slate-100 py-3.5 px-4 rounded-xl leading-relaxed">
-                      🔒 請透過 Google 帳號安全登入。
-                    </p>
+                  {/* 登入面板內容 */}
+                  <div className="space-y-5">
+                    <div className="space-y-4 animate-in fade-in duration-200">
+                      <p className="text-xs text-slate-600 bg-slate-50 border border-slate-100 py-3 px-4 rounded-xl leading-relaxed text-center">
+                        所有幹部與社員皆統一使用 Google 帳戶登入。<br/><strong className="text-slate-800">登入後系統將自動依據您的信箱派發對應權限。</strong>
+                      </p>
 
-                    <button 
-                      onClick={handleGoogleSignIn}
-                      className="w-full flex items-center justify-center bg-white hover:bg-slate-50 text-slate-700 font-bold py-3 px-4 rounded-xl border border-slate-200 shadow-sm transition-all transform hover:-translate-y-0.5 active:translate-y-0 text-sm"
-                    >
-                      <GoogleIcon />
-                      使用 Google 帳戶登入
-                    </button>
-                    
-                    {/* 提供顯眼的後備密碼點選按鈕，避免幹部在 preview iframe 內感到驚慌 */}
-                    <div className="text-center pt-2">
+                      {/* Google 一鍵登入 */}
                       <button 
-                        onClick={triggerBackupPassword}
-                        className="text-[11px] text-slate-400 hover:text-slate-600 hover:underline transition-colors focus:outline-none"
+                        onClick={handleGoogleSignIn}
+                        className="w-full flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3.5 px-4 rounded-xl shadow-sm transition-all text-sm active:scale-[0.98]"
                       >
-                        無法登入？點擊輸入後備幹部密碼
+                        <GoogleIcon />
+                        使用 Google 帳戶安全登入
                       </button>
                     </div>
                   </div>
 
-                  <div className="text-[10px] text-center text-slate-400">
-                    共同安全開發規範 • Firestore 雲端即時安全性驗證
+                  <div className="text-[10px] text-center text-slate-400 pt-2">
+                    為確保隱私安全，未經授權之信箱登入皆為唯讀模式。
                   </div>
                 </div>
               </div>
@@ -1098,8 +1256,17 @@
           // 已登入且無資料：等待取得 Firestore 的資料
           if (!data) return <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 text-slate-500"><Cloud size={48} className="animate-pulse text-blue-500 mb-4" /><p>正在從 Firebase 安全載入資料...</p></div>;
 
-          // 判斷當前使用者是否為管理員 (社長、副社長)
-          const adminRole = checkIsAdmin(currentUser, forceAdmin);
+          // 判斷當前使用者是否為管理員 (包含核心社長信箱，以及系統動態設定的信箱)
+          const adminRole = checkIsAdmin(currentUser, data);
+
+          // 專為系統設定提供的儲存函式
+          const handleSaveSetting = async (newData) => {
+            setData(newData);
+            try {
+              const { doc, setDoc } = window.firebaseApi;
+              await setDoc(doc(window.firebaseDb, "clubApp", "mainData"), newData);
+            } catch (error) { alert("儲存設定失敗！" + error.message); }
+          };
 
           return (
             <div className="min-h-screen bg-slate-50 text-slate-800 font-sans p-2 sm:p-4 md:p-8 pb-24">
@@ -1176,16 +1343,20 @@
                   <TabButton active={activeTab === 'finance'} onClick={() => setActiveTab('finance')} icon={DollarSign} label="財務總表" />
                   {adminRole && <TabButton active={activeTab === 'members'} onClick={() => setActiveTab('members')} icon={ContactIcon} label="社員名單" />}
                   <TabButton active={activeTab === 'registration'} onClick={() => setActiveTab('registration')} icon={ListChecks} label="課程報名" />
+                  <TabButton active={activeTab === 'videos'} onClick={() => setActiveTab('videos')} icon={VideoIcon} label="課程影片" />
                   {adminRole && <TabButton active={activeTab === 'invoice'} onClick={() => setActiveTab('invoice')} icon={FileText} label="經費核銷明細" />}
                   {adminRole && <TabButton active={activeTab === 'competition'} onClick={() => setActiveTab('competition')} icon={Trophy} label="積分競賽統計" />}
+                  {adminRole && <TabButton active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} icon={SettingsIcon} label="系統設定" />}
                 </nav>
 
                 <main className="pt-2">
                   {activeTab === 'finance' && <FinanceTab data={data} isEditing={isEditing} setData={setData} isAdmin={adminRole} />}
                   {adminRole && activeTab === 'members' && <MemberListTab data={data} isEditing={isEditing} setData={setData} />}
                   {activeTab === 'registration' && <RegistrationTab data={data} isEditing={isEditing} setData={setData} isAdmin={adminRole} />}
+                  {activeTab === 'videos' && <VideoTab data={data} isEditing={isEditing} setData={setData} isAdmin={adminRole} />}
                   {adminRole && activeTab === 'invoice' && <InvoiceTab data={data} isEditing={isEditing} setData={setData} />}
                   {adminRole && activeTab === 'competition' && <CompetitionTab data={data} isEditing={isEditing} setData={setData} />}
+                  {adminRole && activeTab === 'settings' && <SettingsTab data={data} setData={handleSaveSetting} />}
                 </main>
                 
               </div>
