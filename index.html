@@ -10,7 +10,7 @@
 
   <title>一起大跳社 & 歐豆K社管理系統</title>
 
-  
+
 
   <!-- 引入 Tailwind CSS -->
 
@@ -42,7 +42,7 @@
 
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  
+
 
   <!-- 優化全局字體與滾動條樣式 -->
 
@@ -50,7 +50,7 @@
 
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
 
-    
+
 
     * {
 
@@ -110,7 +110,7 @@
 
     }
 
-    
+
 
     /* 隱藏橫向滾動條，保持頁面乾淨 */
 
@@ -134,7 +134,7 @@
 
 <body class="bg-slate-50 text-slate-800 antialiased min-h-screen">
 
-  
+
 
   <div id="root"></div>
 
@@ -328,33 +328,81 @@
 
           ledger: [
 
-            // 已入袋與未入袋之各項真實收入
+            // 老師費用
 
-            { id: "t_inc_1", type: "income", category: "課費", item: "基礎養成 課費", amount: 2250, courseId: "c_default_1", note: "" },
+            { id: "t_teacher_caru_1", type: "expense", status: "已支出", category: "老師費用", item: "CaRu課費 第一堂15人", amount: 6000, courseId: "c_20260311_basic", note: "" },
 
-            { id: "t_inc_2", type: "income", category: "課費", item: "K-POP 課費", amount: 3680, courseId: "c_default_2", note: "" },
+            { id: "t_teacher_amo_first_5", type: "expense", status: "已支出", category: "老師費用", item: "阿默課費（前5堂）", amount: 15000, courseId: "c_20260414_kpop", note: "" },
 
-            { id: "t_inc_6", type: "income", category: "福委補助款", item: "福委固定補助金", amount: 8000, note: "" },
+            { id: "t_teacher_amo_last_4", type: "expense", status: "預計支出", category: "老師費用", item: "阿默課費（後4堂）", amount: 12000, courseId: "c_20260901_basic", note: "" },
 
-            { id: "t_inc_7", type: "income", category: "福委補助款", item: "社團博覽會補助金", amount: 2000, note: "" },
 
-            { id: "t_inc_10", type: "income", category: "贊助", item: "Julia處長-社團顧問補助", amount: 7500, note: "" },
 
-            { id: "t_inc_11", type: "income", category: "贊助", item: "方博處長-社團顧問補助", amount: 7500, note: "" },
+            // 場地租金
 
-            
+            { id: "t_venue_sooo_used", type: "expense", status: "已支出", category: "場地租金", item: "Sooo dance 餘$0", amount: 6458, note: "時數已使用完畢" },
 
-            // 精準記錄社團各項支出 (直接關聯至課程 ID)
+            { id: "t_venue_sooo_0623_diff", type: "expense", status: "已支出", category: "場地租金", item: "Sooo dance 6/23 改教室差額", amount: 136, courseId: "c_20260623_kpop", note: "" },
 
-            { id: "t_exp_1", type: "expense", category: "講師費", item: "CaRu課費 第一堂", amount: 6000, courseId: "c_default_1", note: "" },
+            { id: "t_venue_mimix_3hr", type: "expense", status: "已支出", category: "場地租金", item: "MIMIX教室 已租3小時", amount: 1500, note: "A/B教室 500元/hr" },
 
-            { id: "t_exp_3", type: "expense", category: "場地費", item: "第一堂場地租借", amount: 1076, courseId: "c_default_1", note: "" },
+            { id: "t_venue_sooo_renew_c", type: "expense", status: "已支出", category: "場地租金", item: "Sooo dance 續租 精誠C", amount: 5400, note: "續租7/7、8/4、9/1、10/6、11/3、12/1；18:30-19:30 精誠C；借用6小時，未借用時數餘4小時($2160)，費用$5400" },
 
-            { id: "t_exp_2", type: "expense", category: "講師費", item: "阿默課費 第1堂", amount: 3000, courseId: "c_default_2", note: "" },
 
-            { id: "t_exp_5", type: "expense", category: "場地費", item: "第1堂場地租借", amount: 1076, courseId: "c_default_2", note: "" },
 
-            { id: "t_exp_7", type: "expense", category: "雜支", item: "社團博覽會雜支", amount: 1000, note: "" },
+            // 其他活動支出
+
+            { id: "t_event_oil_discount", type: "expense", status: "已支出", category: "其他活動支出", item: "油單活動（課程折抵）", amount: 0, note: "金額暫無，請保留項目" },
+
+            { id: "t_event_expo_misc", type: "expense", status: "已支出", category: "其他活動支出", item: "社團博覽會雜支", amount: 1000, note: "" },
+
+
+
+            // 課費收入
+
+            { id: "t_course_20260311_basic", type: "income", status: "已收入", category: "課費", item: "2026/3/11：基礎養成", amount: 2250, courseId: "c_20260311_basic", note: "" },
+
+            { id: "t_course_20260414_kpop", type: "income", status: "已收入", category: "課費", item: "2026/4/14：K-POP", amount: 3680, courseId: "c_20260414_kpop", note: "" },
+
+            { id: "t_course_extra_practice", type: "income", status: "已收入", category: "課費", item: "加開練習課程", amount: 330, courseId: "c_extra_practice", note: "" },
+
+            { id: "t_course_20260505_basic", type: "income", status: "已收入", category: "課費", item: "2026/5/5：基礎養成", amount: 1000, courseId: "c_20260505_basic", note: "" },
+
+            { id: "t_course_20260623_kpop", type: "income", status: "已收入", category: "課費", item: "2026/6/23：K-POP", amount: 900, courseId: "c_20260623_kpop", note: "已登記 6/23 18:30-19:30 精誠B" },
+
+            { id: "t_course_20260707_basic", type: "income", status: "預計收入", category: "課費", item: "2026/7/7：基礎養成", amount: 0, courseId: "c_20260707_basic", note: "已登記 精誠C" },
+
+            { id: "t_course_20260804_kpop", type: "income", status: "預計收入", category: "課費", item: "2026/8/4：K-POP", amount: 0, courseId: "c_20260804_kpop", note: "已登記 精誠C" },
+
+            { id: "t_course_20260901_basic", type: "income", status: "預計收入", category: "課費", item: "2026/9/1：基礎養成（給阿默費用）", amount: 0, courseId: "c_20260901_basic", note: "已登記 精誠C" },
+
+            { id: "t_course_20261006_kpop", type: "income", status: "預計收入", category: "課費", item: "2026/10/6：K-POP", amount: 0, courseId: "c_20261006_kpop", note: "已登記 精誠C" },
+
+            { id: "t_course_20261103_basic", type: "income", status: "預計收入", category: "課費", item: "2026/11/3：基礎養成", amount: 0, courseId: "c_20261103_basic", note: "已登記 精誠C" },
+
+            { id: "t_course_20261201_kpop", type: "income", status: "預計收入", category: "課費", item: "2026/12/1：K-POP", amount: 0, courseId: "c_20261201_kpop", note: "已登記 精誠C" },
+
+            { id: "t_course_expected_fee", type: "income", status: "預計收入", category: "課費", item: "預計收取課費（$150*6堂*10人）", amount: 9000, note: "" },
+
+
+
+            // 福委補助款／固定補助收入
+
+            { id: "t_subsidy_fixed", type: "income", status: "已收入", category: "福委補助款", item: "福委固定補助金", amount: 8000, note: "" },
+
+            { id: "t_subsidy_expo", type: "income", status: "已收入", category: "福委補助款", item: "社團博覽會補助金", amount: 2000, note: "" },
+
+            { id: "t_subsidy_mothers_day", type: "income", status: "已收入", category: "福委補助款", item: "母親節活動（歐豆K社）", amount: 2000, note: "" },
+
+            { id: "t_subsidy_milly", type: "income", status: "已收入", category: "福委補助款", item: "Milly處長-尾牙贊助", amount: 600, note: "" },
+
+            { id: "t_subsidy_julia", type: "income", status: "已收入", category: "福委補助款", item: "Julia處長-社團顧問補助", amount: 7500, note: "" },
+
+            { id: "t_subsidy_fangbo", type: "income", status: "已收入", category: "福委補助款", item: "方博處長-社團顧問補助", amount: 7500, note: "" },
+
+            { id: "t_subsidy_adele", type: "income", status: "已收入", category: "福委補助款", item: "Adele-個人贊助", amount: 1000, note: "" },
+
+            { id: "t_subsidy_kpi_prize", type: "income", status: "已收入", category: "福委補助款", item: "社團博覽會：KPI比賽獎金", amount: 1000, note: "" },
 
           ],
 
@@ -364,17 +412,35 @@
 
         },
 
-        course: { 
+        course: {
 
             columns: [
 
-                { id: "c_default_1", name: "CaRu 第一堂", memberPrice: 150, nonMemberPrice: 400 },
+                { id: "c_20260311_basic", name: "2026/3/11 基礎養成", memberPrice: 150, nonMemberPrice: 400 },
 
-                { id: "c_default_2", name: "阿默 第1堂", memberPrice: 150, nonMemberPrice: 400 }
+                { id: "c_20260414_kpop", name: "2026/4/14 K-POP", memberPrice: 150, nonMemberPrice: 400 },
 
-            ], 
+                { id: "c_extra_practice", name: "加開練習課程", memberPrice: 150, nonMemberPrice: 400 },
 
-            members: [] 
+                { id: "c_20260505_basic", name: "2026/5/5 基礎養成", memberPrice: 150, nonMemberPrice: 400 },
+
+                { id: "c_20260623_kpop", name: "2026/6/23 K-POP", memberPrice: 150, nonMemberPrice: 400 },
+
+                { id: "c_20260707_basic", name: "2026/7/7 基礎養成", memberPrice: 150, nonMemberPrice: 400 },
+
+                { id: "c_20260804_kpop", name: "2026/8/4 K-POP", memberPrice: 150, nonMemberPrice: 400 },
+
+                { id: "c_20260901_basic", name: "2026/9/1 基礎養成", memberPrice: 150, nonMemberPrice: 400 },
+
+                { id: "c_20261006_kpop", name: "2026/10/6 K-POP", memberPrice: 150, nonMemberPrice: 400 },
+
+                { id: "c_20261103_basic", name: "2026/11/3 基礎養成", memberPrice: 150, nonMemberPrice: 400 },
+
+                { id: "c_20261201_kpop", name: "2026/12/1 K-POP", memberPrice: 150, nonMemberPrice: 400 }
+
+            ],
+
+            members: []
 
         },
 
@@ -398,7 +464,7 @@
 
     // ============================================================
 
-    // ✅ 財務總帳管理與財務分析 Dashboard (合一版 FinanceTab) 
+    // ✅ 財務總帳管理與財務分析 Dashboard (合一版 FinanceTab)
 
     // ============================================================
 
@@ -436,19 +502,31 @@
 
 
 
-      // 總資產計算 (極簡化：純收入 - 純支出)
+      // 收支狀態統計：保留「已支出／預計支出／已收入／預計收入」四種金額狀態
 
-      const actualIncome = ledger.filter(t => t.type === 'income').reduce((s, t) => s + (Number(t.amount) || 0), 0);
+      const getStatus = (t) => t.status || (t.type === 'income' ? '已收入' : '已支出');
 
-      const actualExpense = ledger.filter(t => t.type === 'expense').reduce((s, t) => s + (Number(t.amount) || 0), 0);
+      const sumBy = (predicate) => ledger.filter(predicate).reduce((s, t) => s + (Number(t.amount) || 0), 0);
+
+      const actualIncome = sumBy(t => t.type === 'income' && getStatus(t) === '已收入');
+
+      const expectedIncome = sumBy(t => t.type === 'income' && getStatus(t) === '預計收入');
+
+      const actualExpense = sumBy(t => t.type === 'expense' && getStatus(t) === '已支出');
+
+      const expectedExpense = sumBy(t => t.type === 'expense' && getStatus(t) === '預計支出');
 
       const netAssets = actualIncome - actualExpense;
 
+      const forecastYearEnd = netAssets + expectedIncome - expectedExpense;
 
+      const paidTeacherFee = sumBy(t => t.type === 'expense' && getStatus(t) === '已支出' && (t.category.includes('老師') || t.category.includes('講師')));
 
-      // 年底預計結餘
+      const unpaidTeacherFee = sumBy(t => t.type === 'expense' && getStatus(t) === '預計支出' && (t.category.includes('老師') || t.category.includes('講師')));
 
-      const forecastYearEnd = netAssets + (Number(budget.income) || 0) - (Number(budget.expense) || 0);
+      const paidVenueFee = sumBy(t => t.type === 'expense' && getStatus(t) === '已支出' && t.category.includes('場地'));
+
+      const expectedVenueFee = sumBy(t => t.type === 'expense' && getStatus(t) === '預計支出' && t.category.includes('場地'));
 
 
 
@@ -458,7 +536,7 @@
 
       const fixedSubsidyTotal = ledger
 
-          .filter(t => t.type === 'income' && !t.category.includes('課費'))
+          .filter(t => t.type === 'income' && getStatus(t) === '已收入' && !t.category.includes('課費'))
 
           .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
 
@@ -472,7 +550,11 @@
 
       // 分攤用總和
 
-      const totalCourseIncome = columns.reduce((sum, col) => sum + members.reduce((s, m) => s + (Number(m.payments?.[col.id]) || 0), 0), 0);
+      const totalCourseIncome = ledger
+
+          .filter(t => t.type === 'income' && getStatus(t) === '已收入' && t.category.includes('課費') && t.courseId)
+
+          .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
 
       const totalRegCount = columns.reduce((sum, col) => sum + members.filter(m => m.registered?.[col.id]).length, 0);
 
@@ -513,6 +595,8 @@
           id: `t_${Date.now()}`,
 
           type: txType,
+
+          status: txType === 'income' ? '已收入' : '已支出',
 
           courseId: txCourseId || null,
 
@@ -576,29 +660,107 @@
 
           {/* ====================================================
 
-              1. 核心資產狀態 (極致簡化)
+              1. 收支總覽與現金流 Dashboard
 
              ==================================================== */}
 
-          <div className="grid grid-cols-2 gap-4 md:gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
 
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col justify-center items-center group hover:shadow-md transition-shadow">
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
 
-              <span className="text-sm text-slate-400 font-bold uppercase mb-2 tracking-wider flex items-center gap-1.5"><Wallet size={16}/> 社團總資產</span>
+              <span className="text-xs text-slate-400 font-bold uppercase mb-2 tracking-wider flex items-center gap-1.5"><TrendingUp size={16}/> 已收入合計</span>
 
-              <strong className="text-3xl sm:text-5xl font-black text-slate-800">${netAssets.toLocaleString()}</strong>
+              <strong className="text-3xl font-black text-emerald-600">${actualIncome.toLocaleString()}</strong>
 
             </div>
 
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col justify-center items-center group hover:shadow-md transition-shadow">
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
 
-              <span className="text-sm text-slate-400 font-bold uppercase mb-2 tracking-wider flex items-center gap-1.5"><TrendingUp size={16}/> 預估年底結餘</span>
+              <span className="text-xs text-slate-400 font-bold uppercase mb-2 tracking-wider flex items-center gap-1.5"><TrendingDown size={16}/> 已支出合計</span>
 
-              <strong className={`text-3xl sm:text-5xl font-black ${forecastYearEnd >= 0 ? 'text-blue-600' : 'text-rose-600'}`}>
+              <strong className="text-3xl font-black text-rose-600">${actualExpense.toLocaleString()}</strong>
 
-                ${forecastYearEnd.toLocaleString()}
+            </div>
 
-              </strong>
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+
+              <span className="text-xs text-slate-400 font-bold uppercase mb-2 tracking-wider flex items-center gap-1.5"><Wallet size={16}/> 目前現金餘額</span>
+
+              <strong className={`text-3xl font-black ${netAssets >= 0 ? 'text-blue-600' : 'text-rose-600'}`}>${netAssets.toLocaleString()}</strong>
+
+            </div>
+
+            <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm">
+
+              <span className="text-xs text-slate-400 font-bold uppercase mb-2 tracking-wider flex items-center gap-1.5"><Clock size={16}/> 預估現金餘額</span>
+
+              <strong className={`text-3xl font-black ${forecastYearEnd >= 0 ? 'text-blue-600' : 'text-rose-600'}`}>${forecastYearEnd.toLocaleString()}</strong>
+
+            </div>
+
+          </div>
+
+
+
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 md:gap-6">
+
+            <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+
+              <h3 className="text-sm font-black text-slate-700 mb-4 flex items-center gap-2"><PieChartIcon size={18} className="text-blue-600"/> 現金流（已完成）</h3>
+
+              <div className="space-y-3 text-sm">
+
+                <div className="flex justify-between"><span className="text-slate-500">已收入</span><strong className="text-emerald-600">${actualIncome.toLocaleString()}</strong></div>
+
+                <div className="flex justify-between"><span className="text-slate-500">已支出</span><strong className="text-rose-600">${actualExpense.toLocaleString()}</strong></div>
+
+                <div className="flex justify-between border-t pt-3"><span className="font-bold text-slate-700">目前現金餘額</span><strong className={netAssets >= 0 ? 'text-blue-600' : 'text-rose-600'}>${netAssets.toLocaleString()}</strong></div>
+
+              </div>
+
+            </div>
+
+            <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+
+              <h3 className="text-sm font-black text-slate-700 mb-4 flex items-center gap-2"><Clock size={18} className="text-indigo-600"/> 未來現金流</h3>
+
+              <div className="space-y-3 text-sm">
+
+                <div className="flex justify-between"><span className="text-slate-500">預計收入</span><strong className="text-emerald-600">${expectedIncome.toLocaleString()}</strong></div>
+
+                <div className="flex justify-between"><span className="text-slate-500">預計支出</span><strong className="text-rose-600">${expectedExpense.toLocaleString()}</strong></div>
+
+                <div className="flex justify-between border-t pt-3"><span className="font-bold text-slate-700">預估現金餘額</span><strong className={forecastYearEnd >= 0 ? 'text-blue-600' : 'text-rose-600'}>${forecastYearEnd.toLocaleString()}</strong></div>
+
+              </div>
+
+            </div>
+
+            <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+
+              <h3 className="text-sm font-black text-slate-700 mb-4 flex items-center gap-2"><UserIcon size={18} className="text-purple-600"/> 講師費統計</h3>
+
+              <div className="space-y-3 text-sm">
+
+                <div className="flex justify-between"><span className="text-slate-500">已支付</span><strong className="text-rose-600">${paidTeacherFee.toLocaleString()}</strong></div>
+
+                <div className="flex justify-between"><span className="text-slate-500">未支付</span><strong className="text-amber-600">${unpaidTeacherFee.toLocaleString()}</strong></div>
+
+              </div>
+
+            </div>
+
+            <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+
+              <h3 className="text-sm font-black text-slate-700 mb-4 flex items-center gap-2"><Briefcase size={18} className="text-teal-600"/> 場地租金統計</h3>
+
+              <div className="space-y-3 text-sm">
+
+                <div className="flex justify-between"><span className="text-slate-500">已支出</span><strong className="text-rose-600">${paidVenueFee.toLocaleString()}</strong></div>
+
+                <div className="flex justify-between"><span className="text-slate-500">預計支出</span><strong className="text-amber-600">${expectedVenueFee.toLocaleString()}</strong></div>
+
+              </div>
 
             </div>
 
@@ -660,7 +822,7 @@
 
               </div>
 
-              
+
 
               <div className="overflow-x-auto hide-scrollbar">
 
@@ -672,13 +834,13 @@
 
                               <th className="px-5 py-3 font-bold">課程名稱</th>
 
-                              <th className="px-5 py-3 font-bold text-right">講師費 <span className="font-normal text-[10px] text-slate-400 ml-0.5">(由流水帳帶入)</span></th>
+                              <th className="px-5 py-3 font-bold text-right">講師費</th>
 
-                              <th className="px-5 py-3 font-bold text-right">場地費 <span className="font-normal text-[10px] text-slate-400 ml-0.5">(由流水帳帶入)</span></th>
+                              <th className="px-5 py-3 font-bold text-right">場地費</th>
 
-                              <th className="px-5 py-3 font-bold text-right bg-rose-50/50">實際總成本</th>
+                              <th className="px-5 py-3 font-bold text-right bg-rose-50/50">課程成本</th>
 
-                              <th className="px-5 py-3 font-bold text-right bg-indigo-50/50">分攤補助</th>
+                              <th className="px-5 py-3 font-bold text-right bg-indigo-50/50">平均補助</th>
 
                               <th className="px-5 py-3 font-bold text-right bg-emerald-50/50">課費收入</th>
 
@@ -702,29 +864,13 @@
 
                               const courseCost = teacherFee + venueFee;
 
-                              
+                              const courseIncome = ledger
 
-                              let courseIncome = 0; let courseRegCount = 0;
+                                  .filter(t => t.type === 'income' && getStatus(t) === '已收入' && t.category.includes('課費') && t.courseId === col.id)
 
-                              members.forEach(m => {
+                                  .reduce((s, t) => s + (Number(t.amount) || 0), 0);
 
-                                  courseIncome += (Number(m.payments?.[col.id]) || 0);
-
-                                  if (m.registered?.[col.id]) courseRegCount++;
-
-                              });
-
-
-
-                              let subsidy = 0;
-
-                              if (subsidyMethod === 'average_by_course') subsidy = columns.length > 0 ? fixedSubsidyTotal / columns.length : 0;
-
-                              else if (subsidyMethod === 'average_by_income') subsidy = totalCourseIncome > 0 ? fixedSubsidyTotal * (courseIncome / totalCourseIncome) : 0;
-
-                              else if (subsidyMethod === 'average_by_member') subsidy = totalRegCount > 0 ? fixedSubsidyTotal * (courseRegCount / totalRegCount) : 0;
-
-                              
+                              const subsidy = columns.length > 0 ? fixedSubsidyTotal / columns.length : 0;
 
                               const profit = (subsidy + courseIncome) - courseCost;
 
@@ -936,7 +1082,7 @@
 
                       <tr key={tx.id} className="hover:bg-slate-50 transition-colors">
 
-                        <td className="px-5 py-3 text-center"><span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold border ${typeInfo.cls}`}>{typeInfo.label}</span></td>
+                        <td className="px-5 py-3 text-center"><div className="flex flex-col items-center gap-1"><span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold border ${typeInfo.cls}`}>{typeInfo.label}</span><span className="text-[10px] font-bold text-slate-500">{getStatus(tx)}</span></div></td>
 
                         <td className="px-5 py-3">
 
@@ -1166,7 +1312,7 @@
 
           if (aVal !== bVal) return aVal - bVal;
 
-          return a._origIndex - b._origIndex; 
+          return a._origIndex - b._origIndex;
 
         });
 
@@ -1414,7 +1560,7 @@
 
         member.registered[colId] = checked;
 
-        
+
 
         // 自動帶入預設金額
 
@@ -1976,7 +2122,7 @@
 
       const getPostScore = (count) => count >= 16 ? 4 : count >= 11 ? 3 : count >= 6 ? 2 : count >= 1 ? 1 : 0;
 
-      
+
 
       const handleCountChange = (club, field, value) => {
 
@@ -2220,7 +2366,7 @@
 
             if (adminEmails.includes(newEmail) || ROOT_ADMINS.includes(newEmail)) return customAlert('此信箱已具備管理員權限！');
 
-            
+
 
             const newData = JSON.parse(JSON.stringify(data));
 
@@ -2228,7 +2374,7 @@
 
             if (!newData.settings.adminEmails) newData.settings.adminEmails = [];
 
-            
+
 
             newData.settings.adminEmails.push(newEmail);
 
@@ -2270,7 +2416,7 @@
 
                 </div>
 
-                
+
 
                 <div className="p-6 space-y-6">
 
@@ -2278,23 +2424,23 @@
 
                   <div className="flex flex-col md:flex-row gap-3">
 
-                    <input 
+                    <input
 
-                      type="email" 
+                      type="email"
 
-                      value={newEmail} 
+                      value={newEmail}
 
-                      onChange={(e) => setNewEmail(e.target.value)} 
+                      onChange={(e) => setNewEmail(e.target.value)}
 
-                      placeholder="輸入欲授權的 Google 信箱 (例如: example@gmail.com)" 
+                      placeholder="輸入欲授權的 Google 信箱 (例如: example@gmail.com)"
 
                       className="flex-1 px-4 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
 
                     />
 
-                    <button 
+                    <button
 
-                      onClick={handleAddAdmin} 
+                      onClick={handleAddAdmin}
 
                       className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-xl font-bold text-sm shadow-sm transition-colors whitespace-nowrap flex items-center justify-center gap-2"
 
@@ -2452,7 +2598,7 @@
 
                               <h3 className="font-bold text-slate-800 flex items-center justify-center md:justify-start gap-2">
 
-                                  <ExternalLinkIcon size={20} className="text-blue-600" /> 
+                                  <ExternalLinkIcon size={20} className="text-blue-600" />
 
                                   社課影片連結
 
@@ -2478,7 +2624,7 @@
 
                       </div>
 
-                      
+
 
                       <div className="p-4 lg:p-6">
 
@@ -2704,7 +2850,7 @@
 
               setAuthLoading(false);
 
-              
+
 
               // 當切換身分為一般社員時，若當前選取的分頁是管理者專屬，則強制跳回影片分頁
 
@@ -2824,7 +2970,7 @@
 
               const db = window.firebaseDb;
 
-              
+
 
               // 依據是否在 Canvas 環境自動切換對應儲存路徑
 
@@ -3072,13 +3218,13 @@
 
                   if (!mergedData.competition) { mergedData.competition = generateDefaultData().competition; needsUpdate = true; }
 
-                  
+
 
                   // 修復 5：加入影片儲存陣列
 
                   if (!mergedData.videos) { mergedData.videos = []; needsUpdate = true; }
 
-                  
+
 
                   // 修復 6：加入動態管理員設定
 
@@ -3336,7 +3482,7 @@
 
               <div className="max-w-7xl mx-auto space-y-6">
 
-                
+
 
                 {/* Header 徽章排版區 */}
 
@@ -3384,13 +3530,13 @@
 
                   </div>
 
-                  
+
 
                   {/* 使用者狀態與登入面板 */}
 
                   <div className="flex flex-wrap items-center gap-3">
 
-                    
+
 
                     {/* 身分識別徽章 */}
 
@@ -3526,7 +3672,7 @@
 
                 </main>
 
-                
+
 
               </div>
 
@@ -3548,7 +3694,7 @@
 
                       {customModal.isConfirm && (
 
-                        <button 
+                        <button
 
                           onClick={customModal.onCancel || (() => setCustomModal(null))}
 
@@ -3562,7 +3708,7 @@
 
                       )}
 
-                      <button 
+                      <button
 
                         onClick={customModal.onConfirm}
 
