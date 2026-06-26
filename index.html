@@ -82,7 +82,37 @@
 
     function defaultData() {
       return {
-        finance: { ledger: [], budget: { income: 9000, expense: 12000 } },
+        finance: {
+          ledger: [
+            // 已入袋與未入袋之各項真實收入
+            { id: "t_inc_1", date: "2026-03-11", type: "income", category: "課費", item: "基礎養成 課費", amount: 2250, club: "一起大跳社", paymentMethod: "cash", member: "品in", note: "" },
+            { id: "t_inc_2", date: "2026-04-14", type: "income", category: "課費", item: "K-POP 課費", amount: 3680, club: "一起大跳社", paymentMethod: "cash", member: "品in", note: "" },
+            { id: "t_inc_3", date: "2026-04-20", type: "income", category: "課費", item: "加開練習課程", amount: 330, club: "共用", paymentMethod: "cash", member: "品in", note: "" },
+            { id: "t_inc_4", date: "2026-05-05", type: "income", category: "課費", item: "基礎養成 課費", amount: 1000, club: "一起大跳社", paymentMethod: "cash", member: "品in", note: "" },
+            { id: "t_inc_5", date: "2026-06-23", type: "income", category: "課費", item: "K-POP 課費", amount: 900, club: "一起大跳社", paymentMethod: "cash", member: "品in", note: "已登記 6/23 18:30-19:30 精誠B" },
+            { id: "t_inc_6", date: "2026-03-15", type: "income", category: "福委補助款", item: "福委固定補助金", amount: 8000, club: "共用", paymentMethod: "bank", member: "品in", note: "" },
+            { id: "t_inc_7", date: "2026-03-20", type: "income", category: "福委補助款", item: "社團博覽會補助金", amount: 2000, club: "共用", paymentMethod: "bank", member: "品in", note: "" },
+            { id: "t_inc_8", date: "2026-05-10", type: "income", category: "福委補助款", item: "母親節活動 補助金", amount: 2000, club: "歐豆K社", paymentMethod: "bank", member: "品in", note: "" },
+            { id: "t_inc_9", date: "2026-01-10", type: "income", category: "贊助", item: "Milly處長-尾牙贊助", amount: 600, club: "共用", paymentMethod: "cash", member: "品in", note: "" },
+            { id: "t_inc_10", date: "2026-03-05", type: "income", category: "贊助", item: "Julia處長-社團顧問補助", amount: 7500, club: "共用", paymentMethod: "cash", member: "品in", note: "" },
+            { id: "t_inc_11", date: "2026-03-06", type: "income", category: "贊助", item: "方博處長-社團顧問補助", amount: 7500, club: "共用", paymentMethod: "cash", member: "品in", note: "" },
+            { id: "t_inc_12", date: "2026-03-10", type: "income", category: "贊助", item: "Adele-個人贊助", amount: 1000, club: "共用", paymentMethod: "cash", member: "品in", note: "" },
+            { id: "t_inc_13", date: "2026-03-25", type: "income", category: "KPI獎金", item: "社團博覽會：KPI比賽獎金", amount: 1000, club: "共用", paymentMethod: "cash", member: "品in", note: "" },
+            
+            // 精準記錄社團各項支出
+            { id: "t_exp_1", date: "2026-03-12", type: "expense", category: "老師費用", item: "CaRu課費 第一堂15人", amount: 6000, club: "一起大跳社", paymentMethod: "cash", member: "品in", note: "" },
+            { id: "t_exp_2", date: "2026-04-01", type: "expense", category: "老師費用", item: "阿默課費 (前5堂)", amount: 15000, club: "一起大跳社", paymentMethod: "cash", member: "品in", note: "" },
+            { id: "t_exp_3", date: "2026-03-15", type: "expense", category: "場地租金", item: "Sooo dance (時數已使用完畢)", amount: 6458, club: "一起大跳社", paymentMethod: "cash", member: "品in", note: "" },
+            { id: "t_exp_4", date: "2026-06-23", type: "expense", category: "場地租金", item: "Sooo dance 6/23 改教室差額", amount: 136, club: "一起大跳社", paymentMethod: "cash", member: "品in", note: "" },
+            { id: "t_exp_5", date: "2026-04-20", type: "expense", category: "場地租金", item: "MIMIX教室 已租3小時 (A/B教室 500元/hr)", amount: 1500, club: "共用", paymentMethod: "cash", member: "品in", note: "" },
+            { id: "t_exp_6", date: "2026-06-24", type: "expense", category: "場地租金", item: "Sooo dance 續租 精誠C", amount: 5400, club: "一起大跳社", paymentMethod: "cash", member: "品in", note: "續租7/7、8/4、9/1、10/6、11/3、12/1 18:30-19:30 精誠C" },
+            { id: "t_exp_7", date: "2026-03-22", type: "expense", category: "雜支", item: "社團博覽會雜支", amount: 1000, club: "共用", paymentMethod: "cash", member: "品in", note: "" },
+            
+            // 領出並移入現金袋之資金移轉 (Transfer)
+            { id: "t_tx_1", date: "2026-03-30", type: "transfer", category: "資金移轉", item: "品in領現放入現金袋 (福委補助款移轉)", amount: 12000, club: "共用", paymentMethod: "cash", member: "品in", note: "福委固定補助金、社博補助金、母親節活動移入現金袋" }
+          ],
+          budget: { income: 9000, expense: 12000 }
+        },
         course: { columns: [], members: [] },
         invoice: { company: { name: "天茂企管顧問有限公司", taxId: "89177254" }, months: Array.from({ length: 10 }, (_, i) => ({ id: i + 3, name: `${i + 3}月`, daTiao: { purpose: "", budget: 0, items: [] }, ouDouK: { purpose: "", budget: 0, items: [] } })) },
         competition: { daTiao: { newMembers: 0, activities: 0, posts: [] }, ouDouK: { newMembers: 0, activities: 0, posts: [] } },
@@ -95,16 +125,13 @@
       const base = defaultData();
       const data = { ...base, ...(raw || {}) };
       data.finance = { ...base.finance, ...(data.finance || {}) };
-      data.finance.ledger = data.finance.ledger || [];
-      data.finance.budget = { ...base.finance.budget, ...(data.finance.budget || {}) };
-      if (!data.finance.ledger.length && (data.finance.expenses || data.finance.income)) {
-        data.finance.ledger = [
-          ...(data.finance.expenses || []).map((e, idx) => ({ id: `m_exp_${idx}_${Date.now()}`, date: e.date || "2026-03-01", type: "expense", category: e.category || "舊資料", item: e.item || "舊支出", amount: Math.abs(Number(e.amount) || 0), club: e.club || "共用", paymentMethod: e.paymentMethod || "cash", member: e.member || "品in", note: e.note || "" })),
-          ...(data.finance.income || []).map((e, idx) => ({ id: `m_inc_${idx}_${Date.now()}`, date: e.date || "2026-03-01", type: "income", category: e.category || "舊資料", item: e.item || "舊收入", amount: Math.abs(Number(e.amount) || 0), club: e.club || "共用", paymentMethod: e.paymentMethod || "cash", member: e.member || "品in", note: e.note || "" }))
-        ];
-        delete data.finance.expenses;
-        delete data.finance.income;
+      
+      // 自動判定：若 ledger 為空，則自動套入我們精心設計的初始化帳本
+      if (!data.finance.ledger || data.finance.ledger.length === 0) {
+        data.finance.ledger = base.finance.ledger;
       }
+      
+      data.finance.budget = { ...base.finance.budget, ...(data.finance.budget || {}) };
       data.course = { ...base.course, ...(data.course || {}) };
       data.course.columns = data.course.columns || [];
       data.course.members = (data.course.members || []).map((m, idx) => ({ id: m.id || `m_${Date.now()}_${idx}`, name: m.name || "", department: m.department || "", type: m.type || "社員", registered: m.registered || {}, payments: m.payments || {} }));
