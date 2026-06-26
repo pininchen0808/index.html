@@ -4,69 +4,58 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>一起大跳社 & 歐豆K社管理系統</title>
+  
+  <!-- 引入 Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- 優化全局字體與滾動條樣式 -->
   <style>
-    * { box-sizing: border-box; }
-    body { margin: 0; font-family: system-ui, "Microsoft JhengHei", sans-serif; background: #f6f7fb; color: #172033; }
-    button, input, select, textarea { font: inherit; }
-    button { border: 0; border-radius: 8px; padding: 9px 12px; background: #2563eb; color: #fff; font-weight: 700; cursor: pointer; }
-    button.secondary { background: #edf2f7; color: #263348; border: 1px solid #dfe5ef; }
-    button.danger { background: #e11d48; }
-    button.ghost { background: #fff; color: #68758a; border: 1px solid #dfe5ef; }
-    input, select, textarea { width: 100%; border: 1px solid #dfe5ef; border-radius: 8px; padding: 9px 10px; background: #fff; }
-    textarea { min-height: 70px; resize: vertical; }
-    .shell { max-width: 1180px; margin: 0 auto; padding: 22px; }
-    .topbar { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; border-bottom: 1px solid #dfe5ef; padding-bottom: 18px; margin-bottom: 16px; }
-    h1 { margin: 0 0 8px; font-size: clamp(1.6rem, 4vw, 2.4rem); }
-    h2 { margin: 0 0 14px; font-size: 1.25rem; }
-    h3 { margin: 0 0 10px; font-size: 1rem; }
-    .muted { color: #68758a; }
-    .clubs, .userbar, .toolbar, .actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-    .userbar, .toolbar, .actions { justify-content: flex-end; }
-    .toolbar { justify-content: space-between; margin-bottom: 12px; }
-    .pill { display: inline-flex; border: 1px solid #dfe5ef; border-radius: 999px; padding: 5px 10px; background: #fff; white-space: nowrap; }
-    .avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; background: #dbeafe; }
-    .tabs { display: flex; gap: 8px; overflow-x: auto; padding: 6px; background: #fff; border: 1px solid #dfe5ef; border-radius: 10px; margin-bottom: 16px; }
-    .tabs button { background: transparent; color: #68758a; border: 1px solid transparent; white-space: nowrap; }
-    .tabs button.active { background: #eaf1ff; color: #1746a2; border-color: #bfd2ff; }
-    .grid { display: grid; gap: 14px; }
-    .stats { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-    .two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .card { background: #fff; border: 1px solid #dfe5ef; border-radius: 8px; padding: 16px; box-shadow: 0 1px 2px rgba(15, 23, 42, .04); }
-    .stat small { color: #68758a; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
-    .stat strong { display: block; font-size: 1.5rem; margin-top: 4px; }
-    .form-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
-    .wide { grid-column: span 2; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { border-bottom: 1px solid #edf1f7; padding: 10px; text-align: left; vertical-align: top; }
-    th { color: #68758a; font-size: .82rem; background: #f8fafc; }
-    .right { text-align: right; }
-    .center { text-align: center; }
-    .tag { display: inline-block; border-radius: 999px; padding: 3px 8px; font-size: .78rem; font-weight: 800; }
-    .income { color: #047857; background: #d1fae5; }
-    .expense { color: #be123c; background: #ffe4e6; }
-    .advance { color: #0369a1; background: #e0f2fe; }
-    .reimburse { color: #047857; background: #ccfbf1; }
-    .transfer { color: #6d28d9; background: #ede9fe; }
-    .notice { border: 1px solid #fde68a; background: #fffbeb; color: #92400e; padding: 12px; border-radius: 8px; }
-    .login { min-height: 100vh; display: grid; place-items: center; padding: 22px; }
-    .login .card { max-width: 420px; width: 100%; }
-    .modal { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(15, 23, 42, .45); padding: 16px; z-index: 20; }
-    .modal.show { display: flex; }
-    .modal .card { width: min(520px, 100%); }
-    @media (max-width: 900px) {
-      .topbar { align-items: stretch; flex-direction: column; }
-      .userbar { justify-content: flex-start; }
-      .stats, .two, .three, .form-grid { grid-template-columns: 1fr; }
-      .wide { grid-column: auto; }
-      .table-wrap { overflow-x: auto; }
-      th, td { min-width: 120px; }
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+    
+    * {
+      box-sizing: border-box;
+      font-family: 'Plus Jakarta Sans', 'Noto Sans TC', system-ui, -apple-system, sans-serif;
+    }
+
+    /* 精緻極簡滾動條 */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 99px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    /* 淡入動畫 */
+    .animate-fade-in {
+      animation: fadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    /* 隱藏橫向滾動條，保持頁面乾淨 */
+    .hide-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .hide-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
     }
   </style>
 </head>
-<body>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen">
   <div id="app"></div>
-  <div id="modal" class="modal"></div>
+  <div id="modal" class="modal fixed inset-0 hidden items-center justify-center bg-slate-900/40 backdrop-blur-sm z-50 p-4 transition-all duration-200"></div>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -131,16 +120,57 @@
     }
 
     function showAlert(message) {
-      $("modal").innerHTML = `<div class="card"><h3>系統訊息</h3><p>${esc(message)}</p><div class="actions"><button data-close>確定</button></div></div>`;
-      $("modal").classList.add("show");
-      $("modal").querySelector("[data-close]").onclick = () => $("modal").classList.remove("show");
+      const modal = $("modal");
+      modal.innerHTML = `
+        <div class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl border border-slate-100 animate-fade-in space-y-4">
+          <div class="flex items-center gap-3 text-amber-600">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <h3 class="font-extrabold text-lg text-slate-800 m-0">系統提示</h3>
+          </div>
+          <p class="text-sm text-slate-600 leading-relaxed">${esc(message)}</p>
+          <div class="flex justify-end pt-2">
+            <button class="bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition-all shadow-sm" data-close>確認</button>
+          </div>
+        </div>
+      `;
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+      modal.querySelector("[data-close]").onclick = () => {
+        modal.classList.add("hidden");
+        modal.classList.remove("flex");
+      };
     }
 
     function showConfirm(message, onConfirm) {
-      $("modal").innerHTML = `<div class="card"><h3>請確認</h3><p>${esc(message)}</p><div class="actions"><button class="secondary" data-close>取消</button><button data-ok>確定</button></div></div>`;
-      $("modal").classList.add("show");
-      $("modal").querySelector("[data-close]").onclick = () => $("modal").classList.remove("show");
-      $("modal").querySelector("[data-ok]").onclick = () => { $("modal").classList.remove("show"); onConfirm(); };
+      const modal = $("modal");
+      modal.innerHTML = `
+        <div class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl border border-slate-100 animate-fade-in space-y-4">
+          <div class="flex items-center gap-3 text-blue-600">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <h3 class="font-extrabold text-lg text-slate-800 m-0">確認執行</h3>
+          </div>
+          <p class="text-sm text-slate-600 leading-relaxed">${esc(message)}</p>
+          <div class="flex justify-end gap-2.5 pt-2">
+            <button class="bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-xl transition-all" data-close>取消</button>
+            <button class="bg-red-600 hover:bg-red-700 active:scale-95 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all shadow-sm" data-ok>確定</button>
+          </div>
+        </div>
+      `;
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+      modal.querySelector("[data-close]").onclick = () => {
+        modal.classList.add("hidden");
+        modal.classList.remove("flex");
+      };
+      modal.querySelector("[data-ok]").onclick = () => {
+        modal.classList.add("hidden");
+        modal.classList.remove("flex");
+        onConfirm();
+      };
     }
 
     async function saveData(nextData, closeEditing = false) {
@@ -181,7 +211,47 @@
 
     function layout(content) {
       const tabs = isAdmin() ? [["finance", "財務總表"], ["members", "社員名單"], ["registration", "課程報名"], ["videos", "課程影片"], ["invoice", "經費核銷"], ["competition", "積分競賽"], ["settings", "系統設定"]] : [["videos", "課程影片"], ["registration", "課程報名"], ["finance", "財務總表"]];
-      return `<div class="shell"><header class="topbar"><div><h1>一起大跳社 <span class="muted">&</span> 歐豆K社</h1><div class="clubs"><span class="pill">一起大跳社：社長 Abby，副社長 品in</span><span class="pill">歐豆K社：社長 品in，副社長 廷柔</span></div></div><div class="userbar">${state.user?.photoURL ? `<img class="avatar" src="${state.user.photoURL}" alt="使用者頭像">` : `<div class="avatar"></div>`}<span><strong>${esc(state.user?.displayName || "使用者")}</strong><br><small class="muted">${isAdmin() ? "管理員" : "一般社員"}</small></span>${isAdmin() ? `<button class="secondary" data-toggle-edit>${state.editing ? "結束編輯" : "編輯資料"}</button><button data-save ${state.saving ? "disabled" : ""}>${state.saving ? "儲存中" : "儲存"}</button>` : ""}<button class="ghost" data-signout>登出</button></div></header><nav class="tabs">${tabs.map(([id, label]) => `<button class="${state.activeTab === id ? "active" : ""}" data-tab="${id}">${label}</button>`).join("")}</nav><main>${content}</main></div>`;
+      
+      return `
+        <div class="max-w-[1240px] mx-auto p-4 md:p-6 lg:p-8 space-y-6">
+          <header class="bg-white rounded-2xl border border-slate-200/80 p-5 md:p-6 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div class="space-y-2">
+              <h1 class="text-2xl md:text-3xl font-black text-slate-800 tracking-tight flex items-center gap-2">
+                一起大跳社 <span class="text-slate-300 font-light">&</span> 歐豆K社
+              </h1>
+              <div class="flex flex-wrap gap-2.5">
+                <span class="inline-flex bg-blue-50 border border-blue-100 text-blue-800 text-xs font-bold rounded-lg px-3 py-1">一起大跳社：社長 Abby，副社長 品in</span>
+                <span class="inline-flex bg-purple-50 border border-purple-100 text-purple-800 text-xs font-bold rounded-lg px-3 py-1">歐豆K社：社長 品in，副社長 廷柔</span>
+              </div>
+            </div>
+            
+            <div class="flex flex-wrap items-center gap-4 bg-slate-50 border border-slate-100 rounded-xl p-3">
+              <div class="flex items-center gap-3">
+                ${state.user?.photoURL ? `<img class="w-9 h-9 rounded-full ring-2 ring-indigo-100" src="${state.user.photoURL}" alt="User Avatar">` : `<div class="w-9 h-9 rounded-full bg-slate-300"></div>`}
+                <div>
+                  <div class="text-xs font-extrabold text-slate-700">${esc(state.user?.displayName || "未知使用者")}</div>
+                  <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">${isAdmin() ? "👑 系統管理員" : "👥 一般社員"}</div>
+                </div>
+              </div>
+              <div class="flex gap-2 ml-auto lg:ml-0">
+                ${isAdmin() ? `
+                  <button class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-xl transition-all" data-toggle-edit>${state.editing ? "結束編輯" : "快速編輯"}</button>
+                  <button class="bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs px-4 py-2.5 rounded-xl transition-all shadow-sm active:scale-95" data-save ${state.saving ? "disabled" : ""}>${state.saving ? "儲存中" : "儲存"}</button>
+                ` : ""}
+                <button class="bg-white border border-slate-200 text-slate-500 hover:text-red-600 hover:bg-red-50 font-bold text-xs px-4 py-2.5 rounded-xl transition-all" data-signout>登出</button>
+              </div>
+            </div>
+          </header>
+
+          <nav class="flex gap-2 overflow-x-auto p-1 bg-slate-200/50 rounded-xl border border-slate-200/60 hide-scrollbar">
+            ${tabs.map(([id, label]) => `
+              <button class="flex-1 py-3 text-xs md:text-sm font-bold rounded-lg transition-all text-center whitespace-nowrap min-w-[90px] ${state.activeTab === id ? "bg-white text-indigo-700 shadow-sm border border-slate-200/20" : "bg-transparent text-slate-500 hover:text-slate-800"}" data-tab="${id}">${label}</button>
+            `).join("")}
+          </nav>
+
+          <main class="animate-fade-in min-h-[400px]">${content}</main>
+        </div>
+      `;
     }
 
     function renderFinance() {
@@ -189,49 +259,620 @@
       const budget = state.data.finance.budget;
       const ledger = state.data.finance.ledger.filter((t) => state.filterClub === "all" || t.club === state.filterClub).filter((t) => isAdmin() || !["advance", "reimburse", "transfer"].includes(t.type)).sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
       const typeLabels = { income: "收入", expense: "支出", advance: "代墊", reimburse: "退代墊", transfer: "資金移轉" };
-      return `<section class="grid stats"><div class="card stat"><small>社團總資產</small><strong>${money(stats.netAssets)}</strong></div><div class="card stat"><small>現金袋</small><strong style="color:#059669">${money(stats.cashAssets)}</strong></div><div class="card stat"><small>${isAdmin() ? "未入袋款項" : "預算控管"}</small><strong>${isAdmin() ? money(stats.bankAssets) : "已隱藏"}</strong></div><div class="card stat"><small>${isAdmin() ? "品印代墊" : "安控權限"}</small><strong>${isAdmin() ? money(stats.pininAdvanceOwed) : "唯讀"}</strong></div><div class="card stat"><small>預估年底結餘</small><strong style="color:${stats.forecast >= 0 ? "#2563eb" : "#e11d48"}">${money(stats.forecast)}</strong></div></section><section class="card" style="margin-top:14px"><div class="toolbar"><h2>財務總帳</h2><div style="display:flex;gap:8px;flex-wrap:wrap"><select id="financeFilter" style="width:auto"><option value="all">全部社團</option>${CLUBS.map((c) => `<option ${state.filterClub === c ? "selected" : ""}>${c}</option>`).join("")}</select>${canEdit() ? `<button data-add-ledger>新增交易</button>` : ""}</div></div>${canEdit() ? `<div class="grid two" style="margin-bottom:12px"><label>年度預估收入<input id="budgetIncome" type="number" value="${budget.income || 0}"></label><label>年度預估支出<input id="budgetExpense" type="number" value="${budget.expense || 0}"></label></div>` : ""}<div class="table-wrap"><table><thead><tr><th>日期</th><th>類型</th><th>社團</th><th>項目</th><th>類別</th><th>方式</th><th class="right">金額</th><th>備註</th><th></th></tr></thead><tbody>${ledger.map((t) => `<tr><td>${esc(t.date)}</td><td><span class="tag ${t.type}">${typeLabels[t.type] || t.type}</span></td><td>${esc(t.club || "-")}</td><td><strong>${esc(t.item || "-")}</strong><br><small class="muted">${esc(t.member || "")}</small></td><td>${esc(t.category || "-")}</td><td>${t.paymentMethod === "bank" ? "銀行/託管" : "現金"}</td><td class="right">${money(t.amount)}</td><td>${esc(t.note || "")}</td><td>${canEdit() ? `<button class="danger" data-del-ledger="${t.id}">刪除</button>` : ""}</td></tr>`).join("") || `<tr><td colspan="9" class="center muted">尚無交易資料</td></tr>`}</tbody></table></div></section>`;
+      const typeStyles = {
+        income: "bg-emerald-50 text-emerald-700 border-emerald-200",
+        expense: "bg-rose-50 text-rose-700 border-rose-200",
+        advance: "bg-cyan-50 text-cyan-700 border-cyan-200",
+        reimburse: "bg-teal-50 text-teal-700 border-teal-200",
+        transfer: "bg-purple-50 text-purple-700 border-purple-200"
+      };
+
+      return `
+        <div class="space-y-6">
+          <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between">
+              <span class="text-slate-400 text-[10px] font-black tracking-wider uppercase">社團總資產</span>
+              <strong class="text-2xl font-black text-slate-800 mt-2">${money(stats.netAssets)}</strong>
+            </div>
+            <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between">
+              <span class="text-slate-400 text-[10px] font-black tracking-wider uppercase">現金袋</span>
+              <strong class="text-2xl font-black text-emerald-600 mt-2">${money(stats.cashAssets)}</strong>
+            </div>
+            <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between">
+              <span class="text-slate-400 text-[10px] font-black tracking-wider uppercase">${isAdmin() ? "未入袋款項" : "預算控管"}</span>
+              <strong class="text-2xl font-black text-slate-800 mt-2">${isAdmin() ? money(stats.bankAssets) : "已隱藏"}</strong>
+            </div>
+            <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between">
+              <span class="text-slate-400 text-[10px] font-black tracking-wider uppercase">${isAdmin() ? "品印代墊" : "安控權限"}</span>
+              <strong class="text-2xl font-black text-slate-800 mt-2">${isAdmin() ? money(stats.pininAdvanceOwed) : "唯讀"}</strong>
+            </div>
+            <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-sm flex flex-col justify-between">
+              <span class="text-slate-400 text-[10px] font-black tracking-wider uppercase">預估年底結餘</span>
+              <strong class="text-2xl font-black mt-2 ${stats.forecast >= 0 ? 'text-blue-600' : 'text-rose-600'}">${money(stats.forecast)}</strong>
+            </div>
+          </section>
+
+          <section class="bg-white rounded-2xl border border-slate-200/80 p-5 md:p-6 shadow-sm space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+              <h2 class="text-lg font-black text-slate-800 m-0">收支明細流水帳</h2>
+              <div class="flex flex-wrap gap-2.5">
+                <select id="financeFilter" class="w-auto bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                  <option value="all">全部社團</option>
+                  ${CLUBS.map((c) => `<option ${state.filterClub === c ? "selected" : ""}>${c}</option>`).join("")}
+                </select>
+                ${canEdit() ? `<button class="bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs px-4 py-2 rounded-xl transition-all shadow-sm active:scale-95" data-add-ledger>新增收支</button>` : ""}
+              </div>
+            </div>
+
+            ${canEdit() ? `
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 border border-slate-100 rounded-2xl p-4">
+                <label class="block text-xs font-bold text-slate-500">年度預估收入 (NT$)
+                  <input id="budgetIncome" class="mt-1 bg-white border border-slate-200 rounded-xl px-3 py-2 w-full font-bold focus:ring-2" type="number" value="${budget.income || 0}">
+                </label>
+                <label class="block text-xs font-bold text-slate-500">年度預估支出 (NT$)
+                  <input id="budgetExpense" class="mt-1 bg-white border border-slate-200 rounded-xl px-3 py-2 w-full font-bold focus:ring-2" type="number" value="${budget.expense || 0}">
+                </label>
+              </div>
+            ` : ""}
+
+            <div class="table-wrap rounded-xl border border-slate-100 overflow-hidden">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="bg-slate-50/50">
+                    <th class="px-4 py-3.5 font-bold text-xs">日期</th>
+                    <th class="px-4 py-3.5 font-bold text-xs text-center w-24">類型</th>
+                    <th class="px-4 py-3.5 font-bold text-xs">項目</th>
+                    <th class="px-4 py-3.5 font-bold text-xs">對象</th>
+                    <th class="px-4 py-3.5 font-bold text-xs">會計科目</th>
+                    <th class="px-4 py-3.5 font-bold text-xs">付款管道</th>
+                    <th class="px-4 py-3.5 font-bold text-xs right">金額</th>
+                    <th class="px-4 py-3.5 font-bold text-xs">備註</th>
+                    ${canEdit() ? `<th class="px-4 py-3.5 font-bold text-xs w-16 text-center"></th>` : ""}
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                  ${ledger.map((t) => `
+                    <tr class="hover:bg-slate-50/50 transition-colors">
+                      <td class="px-4 py-3.5 font-mono text-xs text-slate-400">${esc(t.date)}</td>
+                      <td class="px-4 py-3.5 text-center">
+                        <span class="inline-block px-2.5 py-0.5 rounded-lg border text-[10px] font-bold ${typeStyles[t.type] || 'bg-slate-100'}">
+                          ${typeLabels[t.type] || t.type}
+                        </span>
+                      </td>
+                      <td class="px-4 py-3.5">
+                        <strong class="text-slate-800 text-sm block">${esc(t.item || "-")}</strong>
+                        <small class="text-[10px] font-bold text-slate-400 mt-0.5 block">${esc(t.member || "")}</small>
+                      </td>
+                      <td class="px-4 py-3.5">
+                        <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold ${t.club === '一起大跳社' ? 'bg-blue-100 text-blue-700' : t.club === '歐豆K社' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-600'}">
+                          ${esc(t.club || "-")}
+                        </span>
+                      </td>
+                      <td class="px-4 py-3.5 text-slate-600 text-xs">${esc(t.category || "-")}</td>
+                      <td class="px-4 py-3.5 text-slate-500 text-xs">${t.paymentMethod === "bank" ? "🏦 銀行轉帳" : "💵 現金袋"}</td>
+                      <td class="px-4 py-3.5 text-right font-mono font-bold text-slate-800">${money(t.amount)}</td>
+                      <td class="px-4 py-3.5 text-xs text-slate-400 italic max-w-xs truncate">${esc(t.note || "")}</td>
+                      ${canEdit() ? `
+                        <td class="px-4 py-3.5 text-center">
+                          <button class="bg-red-50 hover:bg-red-100 text-red-600 p-1.5 rounded-lg transition-all" data-del-ledger="${t.id}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </td>
+                      ` : ""}
+                    </tr>
+                  `).join("") || `
+                    <tr>
+                      <td colspan="${canEdit() ? '9' : '8'}" class="px-6 py-12 text-center text-slate-400 text-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 mx-auto opacity-30 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        目前無此社團的流水帳紀錄。
+                      </td>
+                    </tr>
+                  `}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      `;
     }
 
     function renderSimplePage(title, body) {
-      return `<section class="card"><h2>${title}</h2>${body}</section>`;
+      return `
+        <div class="bg-white rounded-2xl border border-slate-200/80 p-5 md:p-6 shadow-sm space-y-6">
+          <div class="border-b border-slate-100 pb-3">
+            <h2 class="text-lg font-black text-slate-800 m-0">${title}</h2>
+          </div>
+          <div>${body}</div>
+        </div>
+      `;
     }
 
     function renderMembers() {
-      return renderSimplePage("社員名單", `<div class="toolbar">${canEdit() ? `<button data-add-member>新增社員</button>` : ""}</div><div class="table-wrap"><table><thead><tr><th>系所</th><th>姓名</th><th>身分</th><th>已繳總額</th><th></th></tr></thead><tbody>${state.data.course.members.map((m, idx) => { const paid = Object.values(m.payments || {}).reduce((s, v) => s + (Number(v) || 0), 0); return `<tr><td>${canEdit() ? `<input data-member="${idx}" data-field="department" value="${esc(m.department)}">` : esc(m.department || "-")}</td><td>${canEdit() ? `<input data-member="${idx}" data-field="name" value="${esc(m.name)}">` : `<strong>${esc(m.name || "-")}</strong>`}</td><td>${canEdit() ? `<select data-member="${idx}" data-field="type"><option ${m.type === "社員" ? "selected" : ""}>社員</option><option ${m.type === "非社員" ? "selected" : ""}>非社員</option></select>` : esc(m.type || "社員")}</td><td>${money(paid)}</td><td>${canEdit() ? `<button class="danger" data-del-member="${idx}">刪除</button>` : ""}</td></tr>`; }).join("") || `<tr><td colspan="5" class="center muted">尚無社員資料</td></tr>`}</tbody></table></div>`);
+      return renderSimplePage("社群與活動成員名冊", `
+        <div class="flex justify-between items-center mb-4">
+          <span class="text-xs text-slate-400 font-bold">成員總數：${state.data.course.members.length} 人</span>
+          ${canEdit() ? `<button class="bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs px-4 py-2 rounded-xl transition-all shadow-sm active:scale-95 flex items-center gap-1.5" data-add-member><svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg> 新增成員</button>` : ""}
+        </div>
+        <div class="table-wrap rounded-xl border border-slate-100 overflow-hidden">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="bg-slate-50/50">
+                <th class="px-4 py-3.5 font-bold text-xs w-28">科系/部門</th>
+                <th class="px-4 py-3.5 font-bold text-xs">姓名</th>
+                <th class="px-4 py-3.5 font-bold text-xs w-24">身分</th>
+                <th class="px-4 py-3.5 font-bold text-xs text-right w-36">累計實收社課費</th>
+                ${canEdit() ? `<th class="px-4 py-3.5 w-16 text-center"></th>` : ""}
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              ${state.data.course.members.map((m, idx) => {
+                const paid = Object.values(m.payments || {}).reduce((s, v) => s + (Number(v) || 0), 0);
+                return `
+                  <tr class="hover:bg-slate-50/50 transition-colors">
+                    <td class="px-4 py-3">${canEdit() ? `<input class="border border-slate-200 rounded-lg px-2 py-1 text-xs" data-member="${idx}" data-field="department" value="${esc(m.department)}">` : `<span class="bg-slate-100 text-slate-600 text-xs px-2.5 py-1 rounded-lg font-bold">${esc(m.department || "-")}</span>`}</td>
+                    <td class="px-4 py-3 font-semibold text-slate-800">${canEdit() ? `<input class="border border-slate-200 rounded-lg px-2 py-1 text-xs max-w-[120px]" data-member="${idx}" data-field="name" value="${esc(m.name)}">` : esc(m.name || "-")}</td>
+                    <td class="px-4 py-3">${canEdit() ? `<select class="border border-slate-200 rounded-lg px-2 py-1 text-xs" data-member="${idx}" data-field="type"><option ${m.type === "社員" ? "selected" : ""}>社員</option><option ${m.type === "非社員" ? "selected" : ""}>非社員</option></select>` : `<span class="inline-block px-2 py-0.5 rounded text-[10px] font-extrabold ${m.type === '非社員' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'}">${esc(m.type || "社員")}</span>`}</td>
+                    <td class="px-4 py-3 text-right font-mono font-bold text-blue-600">${money(paid)}</td>
+                    ${canEdit() ? `
+                      <td class="px-4 py-3 text-center">
+                        <button class="bg-red-50 hover:bg-red-100 text-red-600 p-1.5 rounded-lg transition-all" data-del-member="${idx}">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </td>
+                    ` : ""}
+                  </tr>
+                `;
+              }).join("") || `
+                <tr>
+                  <td colspan="5" class="px-6 py-12 text-center text-slate-400 text-sm">目前無任何社員資料。</td>
+                </tr>
+              `}
+            </tbody>
+          </table>
+        </div>
+      `);
     }
 
     function renderRegistration() {
       const columns = state.data.course.columns;
       const members = state.data.course.members;
-      return renderSimplePage("課程報名", `<div class="toolbar">${canEdit() ? `<button data-add-course>新增課程</button>` : `<span class="pill">唯讀模式</span>`}</div>${canEdit() ? `<div class="grid three">${columns.map((c, idx) => `<div class="card"><label>課程名稱<input data-course="${idx}" data-course-field="name" value="${esc(c.name || "")}"></label><label>社員價格<input type="number" data-course="${idx}" data-course-field="memberPrice" value="${c.memberPrice ?? 150}"></label><label>非社員價格<input type="number" data-course="${idx}" data-course-field="nonMemberPrice" value="${c.nonMemberPrice ?? 400}"></label><button class="danger" data-del-course="${idx}" style="margin-top:8px">刪除課程</button></div>`).join("")}</div>` : ""}<div class="table-wrap" style="margin-top:14px"><table><thead><tr><th>姓名</th><th>身分</th>${columns.map((c) => `<th>${esc(c.name || "未命名課程")}</th>`).join("")}</tr></thead><tbody>${members.map((m, mi) => `<tr><td><strong>${esc(m.name || "-")}</strong></td><td>${esc(m.type || "社員")}</td>${columns.map((c) => { const checked = !!m.registered?.[c.id]; const amount = m.payments?.[c.id] ?? ""; return `<td>${canEdit() ? `<label><input style="width:auto" type="checkbox" data-reg="${mi}" data-col="${c.id}" ${checked ? "checked" : ""}> 報名</label><input type="number" data-pay="${mi}" data-col="${c.id}" value="${amount}" placeholder="繳費金額">` : checked ? `<span class="tag income">已報名 ${amount ? money(amount) : ""}</span>` : `<span class="muted">-</span>`}</td>`; }).join("")}</tr>`).join("") || `<tr><td colspan="${columns.length + 2}" class="center muted">尚無報名資料</td></tr>`}</tbody></table></div>`);
+      return renderSimplePage("社課報名與出席記帳", `
+        <div class="flex justify-between items-center mb-4">
+          <span class="text-xs text-slate-400 font-bold">課程總數：${columns.length} 堂</span>
+          ${canEdit() ? `<button class="bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs px-4 py-2 rounded-xl transition-all shadow-sm active:scale-95 flex items-center gap-1.5" data-add-course><svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg> 開設新課程</button>` : ""}
+        </div>
+        
+        ${canEdit() ? `
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            ${columns.map((c, idx) => `
+              <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-3">
+                <div class="flex justify-between items-start gap-2">
+                  <span class="bg-indigo-100 text-indigo-800 text-[10px] font-black px-2 py-0.5 rounded-md">課程 ${idx + 1}</span>
+                  <button class="bg-red-50 hover:bg-red-100 text-red-600 p-1.5 rounded-lg transition-all" data-del-course="${idx}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
+                <div class="space-y-2">
+                  <label class="block text-[10px] font-bold text-slate-400">課程日期與名稱
+                    <input class="mt-1 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:ring-1" data-course="${idx}" data-course-field="name" value="${esc(c.name || "")}">
+                  </label>
+                  <div class="grid grid-cols-2 gap-2">
+                    <label class="block text-[10px] font-bold text-slate-400">社員定價
+                      <input class="mt-1 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-right focus:ring-1" type="number" data-course="${idx}" data-course-field="memberPrice" value="${c.memberPrice ?? 150}">
+                    </label>
+                    <label class="block text-[10px] font-bold text-slate-400">非社員定價
+                      <input class="mt-1 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-right focus:ring-1" type="number" data-course="${idx}" data-course-field="nonMemberPrice" value="${c.nonMemberPrice ?? 400}">
+                    </label>
+                  </div>
+                </div>
+              </div>
+            `).join("")}
+          </div>
+        ` : ""}
+
+        <div class="table-wrap rounded-xl border border-slate-100 overflow-hidden">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="bg-slate-50/50">
+                <th class="px-4 py-3.5 font-bold text-xs border-r border-slate-100 w-36">學員姓名</th>
+                <th class="px-4 py-3.5 font-bold text-xs border-r border-slate-100 w-24">身分</th>
+                ${columns.map((c) => `<th class="px-4 py-3.5 font-bold text-xs text-center border-r border-slate-100 min-w-[160px]">${esc(c.name || "未命名課程")}<br><small class="muted text-[10px] font-normal">社${money(c.memberPrice ?? 150)} / 非${money(c.nonMemberPrice ?? 400)}</small></th>`).join("")}
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              ${members.map((m, mi) => `
+                <tr class="hover:bg-slate-50/50 transition-colors">
+                  <td class="px-4 py-3 border-r border-slate-100"><strong>${esc(m.name || "-")}</strong><br><small class="muted font-bold text-[10px]">${esc(m.department || "-")}</small></td>
+                  <td class="px-4 py-3 border-r border-slate-100"><span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold ${m.type === '非社員' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-600'}">${esc(m.type || "社員")}</span></td>
+                  ${columns.map((c) => {
+                    const checked = !!m.registered?.[c.id];
+                    const amount = m.payments?.[c.id] ?? "";
+                    return `
+                      <td class="px-4 py-3 border-r border-slate-100 align-middle ${checked ? 'bg-indigo-50/10' : ''}">
+                        ${canEdit() ? `
+                          <div class="flex flex-col items-center gap-1.5">
+                            <label class="inline-flex items-center gap-1.5 cursor-pointer text-xs font-bold text-slate-500 hover:text-slate-800">
+                              <input type="checkbox" style="width:auto" data-reg="${mi}" data-col="${c.id}" ${checked ? "checked" : ""}> 登記
+                            </label>
+                            ${checked ? `
+                              <div class="relative flex items-center bg-white border border-slate-200 rounded-lg px-1.5 py-0.5">
+                                <span class="text-[10px] text-slate-400 mr-0.5 font-bold">$</span>
+                                <input class="w-14 border-0 p-0 text-xs text-right font-bold focus:outline-none focus:ring-0" type="number" data-pay="${mi}" data-col="${c.id}" value="${amount}" placeholder="金額">
+                              </div>
+                            ` : ""}
+                          </div>
+                        ` : checked ? `
+                          <div class="text-center">
+                            ${Number(amount) > 0 ? `
+                              <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-lg text-xs font-bold shadow-sm">
+                                <span class="text-[10px]">✓</span>${money(amount)}
+                              </span>
+                            ` : (amount === 0 || amount === '0') ? `
+                              <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-100 text-blue-800 rounded-lg text-xs font-bold shadow-sm">
+                                <span class="text-[10px]">✓</span>折抵
+                              </span>
+                            ` : `
+                              <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-100 text-amber-800 rounded-lg text-xs font-bold shadow-sm">
+                                <span class="text-[10px]">✓</span>未繳
+                              </span>
+                            `}
+                          </div>
+                        ` : `
+                          <div class="text-center text-slate-300">-</div>
+                        `}
+                      </td>
+                    `;
+                  }).join("")}
+                </tr>
+              `).join("") || `
+                <tr>
+                  <td colspan="${columns.length + 2}" class="px-6 py-12 text-center text-slate-400 text-sm">目前尚無名冊資料。</td>
+                </tr>
+              `}
+            </tbody>
+          </table>
+        </div>
+      `);
     }
 
     function renderVideos() {
-      const driveLink = "https://drive.google.com/drive/folders/1HJXojb5ZtgDGOsVU0hrVgmXHQ_RxrwxY?usp=drive_link";
-      return renderSimplePage("課程影片", `<div class="toolbar"><a href="${driveLink}" target="_blank"><button class="secondary">開啟雲端資料夾</button></a>${canEdit() ? `<button data-add-video>新增影片</button>` : ""}</div><div class="grid two">${state.data.videos.map((v, idx) => `<div class="card">${canEdit() ? `<label>標題<input data-video="${idx}" data-video-field="title" value="${esc(v.title || "")}"></label><label>日期<input data-video="${idx}" data-video-field="date" value="${esc(v.date || "")}"></label><label>連結<input data-video="${idx}" data-video-field="url" value="${esc(v.url || "")}"></label><label>說明<textarea data-video="${idx}" data-video-field="note">${esc(v.note || "")}</textarea></label><button class="danger" data-del-video="${idx}">刪除</button>` : `<h3>${esc(v.title || "未命名影片")}</h3><p class="muted">${esc(v.date || "無日期")}</p><p>${esc(v.note || "")}</p>${v.url ? `<a href="${esc(v.url)}" target="_blank"><button>觀看影片</button></a>` : ""}`}</div>`).join("") || `<p class="muted">尚未新增影片。</p>`}</div>`);
+      const driveFolderId = "1HJXojb5ZtgDGOsVU0hrVgmXHQ_RxrwxY";
+      const driveLink = `https://drive.google.com/drive/folders/${driveFolderId}?usp=drive_link`;
+      const embeddedFolderUrl = `https://drive.google.com/embeddedfolderview?id=${driveFolderId}#grid`;
+      
+      return renderSimplePage("社課影音專區", `
+        <div class="bg-gradient-to-r from-indigo-600 to-blue-700 text-white rounded-2xl p-6 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 mb-6">
+          <div class="space-y-1 text-center md:text-left">
+            <h3 class="text-xl font-extrabold m-0 flex items-center justify-center md:justify-start gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-indigo-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+              </svg>
+              課程錄影與學習資源資料庫
+            </h3>
+            <p class="text-xs text-indigo-100">社課的錄影資源皆同步至 Google 雲端中，您可直接在下方查看及下載！</p>
+          </div>
+          <div class="flex gap-2">
+            ${canEdit() ? `<button class="bg-white hover:bg-slate-50 text-indigo-600 font-extrabold text-xs px-5 py-3 rounded-xl shadow-md transition-all active:scale-95 whitespace-nowrap" data-add-video>新增社課捷徑</button>` : ""}
+            <a href="${driveLink}" target="_blank" class="bg-indigo-500 hover:bg-indigo-400 text-white border border-indigo-400/40 font-bold text-xs px-5 py-3 rounded-xl shadow-md transition-all active:scale-95 whitespace-nowrap flex items-center gap-1.5">
+              前往雲端硬碟 <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+            </a>
+          </div>
+        </div>
+
+        <div class="space-y-6">
+          <!-- 直觀嵌入雲端硬碟視圖 -->
+          <div class="rounded-2xl border border-slate-200/80 overflow-hidden shadow-inner">
+            <iframe src="${embeddedFolderUrl}" class="w-full h-[520px] border-none bg-slate-100" allow="autoplay"></iframe>
+          </div>
+
+          <!-- 精選捷徑 -->
+          <div>
+            <h3 class="text-sm font-extrabold text-slate-700 mb-3.5 flex items-center gap-1.5">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>
+              社課影片捷徑
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              ${state.data.videos.map((v, idx) => `
+                <div class="bg-slate-50 hover:bg-slate-100/50 border border-slate-200/80 rounded-2xl p-5 flex flex-col justify-between relative transition-all shadow-sm">
+                  ${canEdit() ? `
+                    <button class="absolute top-3 right-3 bg-red-50 hover:bg-red-100 text-red-600 p-1.5 rounded-lg transition-all" data-del-video="${idx}">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  ` : ""}
+                  
+                  <div class="space-y-3 flex-grow">
+                    ${canEdit() ? `
+                      <label class="block text-[10px] font-bold text-slate-400">主題名稱
+                        <input class="mt-1 bg-white border rounded-lg px-2.5 py-1.5 text-xs focus:ring-1" data-video="${idx}" data-video-field="title" value="${esc(v.title || "")}">
+                      </label>
+                      <label class="block text-[10px] font-bold text-slate-400">日期
+                        <input class="mt-1 bg-white border rounded-lg px-2.5 py-1.5 text-xs focus:ring-1" data-video="${idx}" data-video-field="date" value="${esc(v.date || "")}">
+                      </label>
+                      <label class="block text-[10px] font-bold text-slate-400">Google Drive 檔案超連結
+                        <input class="mt-1 bg-white border rounded-lg px-2.5 py-1.5 text-xs focus:ring-1 font-mono text-[10px]" data-video="${idx}" data-video-field="url" value="${esc(v.url || "")}">
+                      </label>
+                      <label class="block text-[10px] font-bold text-slate-400">課程大綱 / 備註
+                        <textarea class="mt-1 bg-white border rounded-lg px-2.5 py-1.5 text-xs focus:ring-1" data-video="${idx}" data-video-field="note">${esc(v.note || "")}</textarea>
+                      </label>
+                    ` : `
+                      <div class="flex justify-between items-start gap-2">
+                        <h4 class="font-extrabold text-slate-800 text-sm m-0 line-clamp-1">${esc(v.title || "未命名課程")}</h4>
+                        <span class="bg-indigo-50 border border-indigo-100 text-indigo-700 text-[9px] font-bold px-2 py-0.5 rounded-md whitespace-nowrap">${esc(v.date || "無日期")}</span>
+                      </div>
+                      <p class="text-xs text-slate-500 leading-relaxed line-clamp-3">${esc(v.note || "無課程大綱描述。")}</p>
+                    `}
+                  </div>
+
+                  ${!canEdit() && v.url ? `
+                    <a href="${esc(v.url)}" target="_blank" class="mt-4 block w-full text-center">
+                      <button class="w-full bg-slate-800 hover:bg-slate-700 font-bold text-xs py-2.5 rounded-xl transition-all shadow-sm">觀看 / 下載影片</button>
+                    </a>
+                  ` : ""}
+                </div>
+              `).join("") || `
+                <div class="col-span-full py-12 text-center text-slate-400 text-xs">目前暫時沒有單堂影片快速捷徑。</div>
+              `}
+            </div>
+          </div>
+        </div>
+      `);
     }
 
     function renderInvoice() {
-      return renderSimplePage("經費核銷明細", `<div class="notice">統編：<strong>${esc(state.data.invoice.company.taxId)}</strong>，公司：${esc(state.data.invoice.company.name)}</div><div class="grid two" style="margin-top:14px">${state.data.invoice.months.map((m, mi) => `<div class="card"><h3>${esc(m.name)}</h3>${["daTiao", "ouDouK"].map((key) => { const label = key === "daTiao" ? "一起大跳社" : "歐豆K社"; const block = m[key] || { purpose: "", budget: 0, items: [] }; const total = (block.items || []).reduce((s, item) => s + (Number(item.amount) || 0), 0); return `<div class="card"><h3>${label}</h3>${canEdit() ? `<label>用途<input data-invoice="${mi}" data-club="${key}" data-invoice-field="purpose" value="${esc(block.purpose || "")}"></label><label>補助額度<input type="number" data-invoice="${mi}" data-club="${key}" data-invoice-field="budget" value="${block.budget || 0}"></label><button data-add-invoice="${mi}" data-club="${key}">新增項目</button>` : `<p>${esc(block.purpose || "尚未設定用途")}</p>`}<p><strong>花費 ${money(total)}</strong>，餘額 ${money((Number(block.budget) || 0) - total)}</p></div>`; }).join("")}</div>`).join("")}</div>`);
+      return renderSimplePage("補助款發票核銷追蹤", `
+        <div class="bg-slate-50 border border-slate-100 rounded-2xl p-5 mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div class="space-y-1">
+            <h3 class="text-base font-extrabold m-0 text-slate-800">配合報帳公司抬頭</h3>
+            <span class="inline-block bg-indigo-50 text-indigo-800 border border-indigo-100 text-xs font-bold rounded-lg px-3 py-1">公司：${esc(state.data.invoice.company.name)}</span>
+          </div>
+          <div>
+            <span class="text-xs font-bold text-slate-400 block tracking-wider uppercase">統一發票統編</span>
+            <strong class="text-xl md:text-2xl font-black text-slate-800 tracking-wider font-mono">${esc(state.data.invoice.company.taxId)}</strong>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          ${state.data.invoice.months.map((m, mi) => {
+            const daTiao = m.daTiao || { purpose: "", budget: 0, items: [] };
+            const ouDouK = m.ouDouK || { purpose: "", budget: 0, items: [] };
+            const daTiaoTotal = (daTiao.items || []).reduce((s, i) => s + (Number(i.amount) || 0), 0);
+            const ouDouKTotal = (ouDouK.items || []).reduce((s, i) => s + (Number(i.amount) || 0), 0);
+
+            return `
+              <div class="border border-slate-200/80 rounded-2xl p-5 bg-white space-y-4 shadow-sm">
+                <div class="border-b border-slate-100 pb-2.5">
+                  <h3 class="font-extrabold text-slate-800 text-base m-0">${esc(m.name)}核銷進度</h3>
+                </div>
+                
+                <div class="space-y-4">
+                  <!-- 一起大跳社 -->
+                  <div class="bg-blue-50/20 border border-blue-100/60 rounded-xl p-4 space-y-3">
+                    <div class="flex justify-between items-center">
+                      <span class="font-extrabold text-xs text-blue-800 flex items-center gap-1.5"><span class="w-2 h-2 bg-blue-500 rounded-full"></span>一起大跳社</span>
+                      <span class="text-[10px] font-bold text-blue-500">已申報：${money(daTiaoTotal)}</span>
+                    </div>
+                    ${canEdit() ? `
+                      <div class="space-y-2">
+                        <label class="block text-[10px] font-bold text-slate-400">本月補助用途
+                          <input class="mt-1 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:ring-1" data-invoice="${mi}" data-club="daTiao" data-invoice-field="purpose" value="${esc(daTiao.purpose || "")}">
+                        </label>
+                        <label class="block text-[10px] font-bold text-slate-400">預算額度
+                          <input class="mt-1 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-right focus:ring-1" type="number" data-invoice="${mi}" data-club="daTiao" data-invoice-field="budget" value="${daTiao.budget || 0}">
+                        </label>
+                        <button class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-2 rounded-lg transition-all" data-add-invoice="${mi}" data-club="daTiao">+ 登載發票項目</button>
+                      </div>
+                    ` : `
+                      <p class="text-xs text-slate-600 m-0 leading-relaxed font-semibold">${esc(daTiao.purpose || "尚未設定特定用途")}</p>
+                    `}
+                    <div class="flex justify-between text-xs pt-1.5 border-t border-slate-200/40">
+                      <span class="text-slate-400 font-bold">補助限額: ${money(daTiao.budget)}</span>
+                      <span class="font-bold ${(daTiao.budget - daTiaoTotal) >= 0 ? 'text-green-600' : 'text-rose-600'}">可報餘額: ${money(daTiao.budget - daTiaoTotal)}</span>
+                    </div>
+                  </div>
+
+                  <!-- 歐豆K社 -->
+                  <div class="bg-purple-50/20 border border-purple-100/60 rounded-xl p-4 space-y-3">
+                    <div class="flex justify-between items-center">
+                      <span class="font-extrabold text-xs text-purple-800 flex items-center gap-1.5"><span class="w-2 h-2 bg-purple-500 rounded-full"></span>歐豆K社</span>
+                      <span class="text-[10px] font-bold text-purple-500">已申報：${money(ouDouKTotal)}</span>
+                    </div>
+                    ${canEdit() ? `
+                      <div class="space-y-2">
+                        <label class="block text-[10px] font-bold text-slate-400">本月補助用途
+                          <input class="mt-1 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs focus:ring-1" data-invoice="${mi}" data-club="ouDouK" data-invoice-field="purpose" value="${esc(ouDouK.purpose || "")}">
+                        </label>
+                        <label class="block text-[10px] font-bold text-slate-400">預算額度
+                          <input class="mt-1 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-right focus:ring-1" type="number" data-invoice="${mi}" data-club="ouDouK" data-invoice-field="budget" value="${ouDouK.budget || 0}">
+                        </label>
+                        <button class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs py-2 rounded-lg transition-all" data-add-invoice="${mi}" data-club="ouDouK">+ 登載發票項目</button>
+                      </div>
+                    ` : `
+                      <p class="text-xs text-slate-600 m-0 leading-relaxed font-semibold">${esc(ouDouK.purpose || "尚未設定特定用途")}</p>
+                    `}
+                    <div class="flex justify-between text-xs pt-1.5 border-t border-slate-200/40">
+                      <span class="text-slate-400 font-bold">補助限額: ${money(ouDouK.budget)}</span>
+                      <span class="font-bold ${(ouDouK.budget - ouDouKTotal) >= 0 ? 'text-green-600' : 'text-rose-600'}">可報餘額: ${money(ouDouK.budget - ouDouKTotal)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      `);
     }
 
     function renderCompetition() {
-      return renderSimplePage("積分競賽", `<div class="grid two">${["daTiao", "ouDouK"].map((key) => { const c = state.data.competition[key]; const label = key === "daTiao" ? "一起大跳社" : "歐豆K社"; return `<div class="card"><h3>${label}</h3><label>新社員人數<input ${canEdit() ? "" : "disabled"} type="number" data-comp="${key}" data-comp-field="newMembers" value="${c.newMembers || 0}"></label><label>活動次數<input ${canEdit() ? "" : "disabled"} type="number" data-comp="${key}" data-comp-field="activities" value="${c.activities || 0}"></label><p class="muted">發文篇數：${(c.posts || []).length}</p>${canEdit() ? `<button data-add-post="${key}">新增發文</button>` : ""}</div>`; }).join("")}</div>`);
+      return renderSimplePage("年度社團評鑑與競賽積分追蹤", `
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          ${["daTiao", "ouDouK"].map((key) => {
+            const c = state.data.competition[key];
+            const label = key === "daTiao" ? "一起大跳社" : "歐豆K社";
+            const borderCls = key === "daTiao" ? "border-blue-200/80" : "border-purple-200/80";
+            const headerCls = key === "daTiao" ? "bg-blue-50 text-blue-900 border-blue-100" : "bg-purple-50 text-purple-900 border-purple-100";
+
+            return `
+              <div class="border ${borderCls} rounded-2xl shadow-sm overflow-hidden bg-white">
+                <div class="px-5 py-4 border-b ${headerCls} flex justify-between items-center">
+                  <h3 class="font-extrabold text-sm m-0">${label} 評鑑指標</h3>
+                  <span class="bg-white/80 border border-slate-200/30 text-xs font-black px-3 py-1 rounded-full text-slate-800">競賽資料</span>
+                </div>
+                
+                <div class="p-5 space-y-6">
+                  <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-slate-50 border border-slate-100 p-4 rounded-xl text-center">
+                      <span class="text-slate-400 text-[10px] font-bold block mb-1">新增社員人數</span>
+                      ${canEdit() ? `
+                        <input class="bg-white border rounded-lg text-center font-bold px-2 py-1 text-sm focus:ring-1 w-20 mx-auto" type="number" min="0" data-comp="${key}" data-comp-field="newMembers" value="${c.newMembers || 0}">
+                      ` : `
+                        <strong class="text-2xl font-black text-slate-800">${c.newMembers || 0} 人</strong>
+                      `}
+                    </div>
+                    <div class="bg-slate-50 border border-slate-100 p-4 rounded-xl text-center">
+                      <span class="text-slate-400 text-[10px] font-bold block mb-1">主/協辦活動次數</span>
+                      ${canEdit() ? `
+                        <input class="bg-white border rounded-lg text-center font-bold px-2 py-1 text-sm focus:ring-1 w-20 mx-auto" type="number" min="0" data-comp="${key}" data-comp-field="activities" value="${c.activities || 0}">
+                      ` : `
+                        <strong class="text-2xl font-black text-slate-800">${c.activities || 0} 次</strong>
+                      `}
+                    </div>
+                  </div>
+
+                  <div class="space-y-3">
+                    <div class="flex justify-between items-center border-b border-slate-100 pb-2">
+                      <h4 class="font-extrabold text-xs text-slate-700 m-0 flex items-center gap-1.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M7 20l4-16m2 16l4-16" /></svg>
+                        社群推廣發文紀錄
+                      </h4>
+                      ${canEdit() ? `<button class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-extrabold text-[10px] px-2.5 py-1 rounded-lg transition-all" data-add-post="${key}">+ 記錄新貼文</button>` : ""}
+                    </div>
+
+                    <div class="table-wrap rounded-xl border border-slate-100">
+                      <table class="w-full text-xs">
+                        <thead>
+                          <tr class="bg-slate-50/50">
+                            <th class="px-3 py-2 font-bold w-24">發文日期</th>
+                            <th class="px-3 py-2 font-bold">宣傳主題</th>
+                            <th class="px-3 py-2 font-bold w-24">推廣管道</th>
+                          </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                          ${(c.posts || []).map((post, pi) => `
+                            <tr>
+                              <td class="px-3 py-2 font-mono text-slate-500">${esc(post.date || "-")}</td>
+                              <td class="px-3 py-2 font-semibold text-slate-700">${esc(post.title || "未命名宣傳貼文")}</td>
+                              <td class="px-3 py-2">${esc(post.platform || "Instagram")}</td>
+                            </tr>
+                          `).join("") || `
+                            <tr>
+                              <td colspan="3" class="px-4 py-8 text-center text-slate-400">目前暫無發文紀錄。</td>
+                            </tr>
+                          `}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join("")}
+        </div>
+      `);
     }
 
     function renderSettings() {
       const admins = state.data.settings.adminEmails || [];
-      return renderSimplePage("系統設定", `<div class="grid two"><div class="card"><h3>核心管理員</h3>${ROOT_ADMINS.map((email) => `<p><span class="tag transfer">系統核心</span> ${email}</p>`).join("")}</div><div class="card"><h3>動態授權管理員</h3>${canEdit() ? `<div class="toolbar"><input id="newAdminEmail" placeholder="name@gis.fcu.edu.tw"><button data-add-admin>新增</button></div>` : ""}${admins.map((email) => `<p><span class="tag income">授權</span> ${email} ${canEdit() ? `<button class="danger" data-del-admin="${email}">移除</button>` : ""}</p>`).join("") || `<p class="muted">尚未新增動態管理員。</p>`}</div></div>`);
+      return renderSimplePage("系統權限與核心安全設定", `
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="border border-slate-200/80 rounded-2xl p-5 bg-white space-y-4 shadow-sm">
+            <div class="border-b border-slate-100 pb-2">
+              <h3 class="font-extrabold text-slate-800 text-sm m-0">核心管理員（不可解除）</h3>
+            </div>
+            <div class="space-y-2">
+              ${ROOT_ADMINS.map((email) => `
+                <div class="flex items-center justify-between bg-indigo-50/40 border border-indigo-100 rounded-xl px-4 py-3 text-xs font-semibold">
+                  <span class="text-indigo-800">${email}</span>
+                  <span class="bg-indigo-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">最高核心</span>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+
+          <div class="border border-slate-200/80 rounded-2xl p-5 bg-white space-y-4 shadow-sm">
+            <div class="border-b border-slate-100 pb-2">
+              <h3 class="font-extrabold text-slate-800 text-sm m-0">動態授權管理員</h3>
+            </div>
+            
+            ${canEdit() ? `
+              <div class="flex gap-2">
+                <input id="newAdminEmail" class="bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs focus:ring-1" placeholder="輸入 name@gis.fcu.edu.tw Google 帳戶">
+                <button class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-5 py-2 rounded-xl transition-all shadow-sm active:scale-95" data-add-admin>新增授權</button>
+              </div>
+            ` : ""}
+
+            <div class="space-y-2">
+              ${admins.map((email) => `
+                <div class="flex items-center justify-between bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-xs">
+                  <span class="font-medium text-slate-700">${email}</span>
+                  <div class="flex items-center gap-2">
+                    <span class="bg-emerald-100 text-emerald-800 border border-emerald-200 text-[9px] font-bold px-2 py-0.5 rounded-full">已授權</span>
+                    ${canEdit() ? `<button class="text-red-500 hover:text-red-700 p-1 hover:bg-red-50 rounded-lg transition-all" data-del-admin="${email}">移除</button>` : ""}
+                  </div>
+                </div>
+              `).join("") || `<p class="text-xs text-slate-400 italic py-3 text-center">目前無動態管理員，僅核心幹部具備管理權限。</p>`}
+            </div>
+          </div>
+        </div>
+      `);
     }
 
     function render() {
       if (!state.user) {
-        $("app").innerHTML = `<div class="login"><div class="card"><h1>一起大跳社 & 歐豆K社</h1><p class="muted">請使用 Google 帳號登入管理系統。</p><button data-login>使用 Google 登入</button></div></div>`;
+        $("app").innerHTML = `
+          <div class="min-h-screen bg-slate-50 text-slate-800 flex flex-col items-center justify-center p-4">
+            <div class="bg-white border border-slate-200/80 p-8 rounded-3xl w-full max-w-sm shadow-xl space-y-6 text-center">
+              <div class="space-y-2">
+                <div class="w-12 h-12 bg-indigo-50 border border-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto shadow-sm">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+                <h2 class="text-xl font-black text-slate-800 m-0">社團管理系統</h2>
+                <p class="text-xs text-slate-400 font-semibold tracking-wider uppercase m-0">一起大跳社 ✖ 歐豆K社</p>
+              </div>
+              
+              <div class="space-y-4">
+                <p class="text-xs text-slate-500 leading-relaxed bg-slate-50 border border-slate-100 p-3.5 rounded-xl">
+                  🔒 所有幹部與社員皆統一使用逢甲 Google 帳戶安全登入，系統將會依據信箱指派對應管理權限。
+                </p>
+                <button class="w-full bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3 px-4 rounded-xl shadow-sm transition-all text-sm active:scale-[0.98] flex items-center justify-center gap-2" data-login>
+                  <GoogleIcon />
+                  使用 Google 帳戶安全登入
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
         $("app").querySelector("[data-login]").onclick = () => signInWithPopup(auth, provider).catch((error) => showAlert(`Google 登入失敗：${error.message}`));
         return;
       }
       if (!state.data) {
-        $("app").innerHTML = `<div class="login"><div class="card"><h2>正在載入資料...</h2></div></div>`;
+        $("app").innerHTML = `
+          <div class="min-h-screen flex flex-col items-center justify-center bg-slate-50 text-slate-400">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-3.5"></div>
+            <p class="text-xs font-semibold">正在驗證安控授權狀態...</p>
+          </div>
+        `;
         return;
       }
       const pages = { finance: renderFinance, members: renderMembers, registration: renderRegistration, videos: renderVideos, invoice: renderInvoice, competition: renderCompetition, settings: renderSettings };
@@ -241,43 +882,109 @@
 
     function bindEvents() {
       document.querySelectorAll("[data-tab]").forEach((el) => el.onclick = () => { state.activeTab = el.dataset.tab; render(); });
-      document.querySelector("[data-signout]")?.addEventListener("click", () => showConfirm("確定要登出嗎？", () => signOut(auth)));
+      document.querySelector("[data-signout]")?.addEventListener("click", () => showConfirm("確定要登出管理系統嗎？", () => signOut(auth)));
       document.querySelector("[data-toggle-edit]")?.addEventListener("click", () => { state.editing = !state.editing; render(); });
       document.querySelector("[data-save]")?.addEventListener("click", () => saveData(state.data, true));
       $("financeFilter")?.addEventListener("change", (e) => { state.filterClub = e.target.value; render(); });
       $("budgetIncome")?.addEventListener("input", (e) => updateData((d) => d.finance.budget.income = Number(e.target.value)));
       $("budgetExpense")?.addEventListener("input", (e) => updateData((d) => d.finance.budget.expense = Number(e.target.value)));
       document.querySelector("[data-add-ledger]")?.addEventListener("click", addLedger);
-      document.querySelectorAll("[data-del-ledger]").forEach((el) => el.onclick = () => showConfirm("確定刪除這筆交易？", () => updateData((d) => d.finance.ledger = d.finance.ledger.filter((t) => t.id !== el.dataset.delLedger))));
+      document.querySelectorAll("[data-del-ledger]").forEach((el) => el.onclick = () => showConfirm("確定要刪除這筆交易流水嗎？此操作無法還原！", () => updateData((d) => d.finance.ledger = d.finance.ledger.filter((t) => t.id !== el.dataset.delLedger))));
       document.querySelector("[data-add-member]")?.addEventListener("click", () => updateData((d) => d.course.members.push({ id: `m_${Date.now()}`, name: "", department: "", type: "社員", registered: {}, payments: {} })));
-      document.querySelectorAll("[data-del-member]").forEach((el) => el.onclick = () => updateData((d) => d.course.members.splice(Number(el.dataset.delMember), 1)));
+      document.querySelectorAll("[data-del-member]").forEach((el) => el.onclick = () => showConfirm("確定要將該成員從名冊中徹底刪除嗎？", () => updateData((d) => d.course.members.splice(Number(el.dataset.delMember), 1))));
       document.querySelectorAll("[data-member]").forEach((el) => el.oninput = () => updateData((d) => d.course.members[Number(el.dataset.member)][el.dataset.field] = el.value));
       document.querySelector("[data-add-course]")?.addEventListener("click", () => updateData((d) => d.course.columns.push({ id: `c_${Date.now()}`, name: "新課程", memberPrice: 150, nonMemberPrice: 400 })));
-      document.querySelectorAll("[data-del-course]").forEach((el) => el.onclick = () => updateData((d) => d.course.columns.splice(Number(el.dataset.delCourse), 1)));
+      document.querySelectorAll("[data-del-course]").forEach((el) => el.onclick = () => showConfirm("確定要將這堂課程刪除嗎？這將會同步清除所有已繳費數據！", () => updateData((d) => d.course.columns.splice(Number(el.dataset.delCourse), 1))));
       document.querySelectorAll("[data-course]").forEach((el) => el.oninput = () => updateData((d) => d.course.columns[Number(el.dataset.course)][el.dataset.courseField] = el.type === "number" ? Number(el.value) : el.value));
       document.querySelectorAll("[data-reg]").forEach((el) => el.onchange = () => updateData((d) => { const member = d.course.members[Number(el.dataset.reg)]; const col = d.course.columns.find((c) => c.id === el.dataset.col); member.registered[el.dataset.col] = el.checked; if (el.checked && !member.payments[el.dataset.col]) member.payments[el.dataset.col] = member.type === "非社員" ? (col.nonMemberPrice ?? 400) : (col.memberPrice ?? 150); if (!el.checked) delete member.payments[el.dataset.col]; }));
       document.querySelectorAll("[data-pay]").forEach((el) => el.oninput = () => updateData((d) => d.course.members[Number(el.dataset.pay)].payments[el.dataset.col] = Number(el.value)));
-      document.querySelector("[data-add-video]")?.addEventListener("click", () => updateData((d) => d.videos.push({ title: "新影片", date: today(), url: "", note: "" })));
-      document.querySelectorAll("[data-del-video]").forEach((el) => el.onclick = () => updateData((d) => d.videos.splice(Number(el.dataset.delVideo), 1)));
+      document.querySelector("[data-add-video]")?.addEventListener("click", () => updateData((d) => d.videos.push({ title: "新課程影片", date: today(), url: "", note: "" })));
+      document.querySelectorAll("[data-del-video]").forEach((el) => el.onclick = () => showConfirm("確定要移除這個社課影片捷徑嗎？", () => updateData((d) => d.videos.splice(Number(el.dataset.delVideo), 1))));
       document.querySelectorAll("[data-video]").forEach((el) => el.oninput = () => updateData((d) => d.videos[Number(el.dataset.video)][el.dataset.videoField] = el.value));
       document.querySelectorAll("[data-invoice]").forEach((el) => el.oninput = () => updateData((d) => d.invoice.months[Number(el.dataset.invoice)][el.dataset.club][el.dataset.invoiceField] = el.type === "number" ? Number(el.value) : el.value));
       document.querySelectorAll("[data-add-invoice]").forEach((el) => el.onclick = () => updateData((d) => d.invoice.months[Number(el.dataset.addInvoice)][el.dataset.club].items.push({ name: "", amount: 0, payer: "" })));
       document.querySelectorAll("[data-comp]").forEach((el) => el.oninput = () => updateData((d) => d.competition[el.dataset.comp][el.dataset.compField] = Number(el.value)));
-      document.querySelectorAll("[data-add-post]").forEach((el) => el.onclick = () => updateData((d) => d.competition[el.dataset.addPost].posts.push({ date: today(), platform: "", title: "" })));
+      document.querySelectorAll("[data-add-post]").forEach((el) => el.onclick = () => updateData((d) => d.competition[el.dataset.addPost].posts.push({ date: today(), platform: "Instagram", title: "" })));
       document.querySelector("[data-add-admin]")?.addEventListener("click", () => { const email = $("newAdminEmail").value.trim(); if (!email.includes("@")) return showAlert("請輸入有效的 Google 信箱。"); if (ROOT_ADMINS.includes(email) || state.data.settings.adminEmails.includes(email)) return showAlert("此信箱已具備管理員權限。"); updateData((d) => d.settings.adminEmails.push(email)); });
-      document.querySelectorAll("[data-del-admin]").forEach((el) => el.onclick = () => updateData((d) => d.settings.adminEmails = d.settings.adminEmails.filter((email) => email !== el.dataset.delAdmin)));
+      document.querySelectorAll("[data-del-admin]").forEach((el) => el.onclick = () => showConfirm("確定要移除此帳號的動態授權管理員資格嗎？", () => updateData((d) => d.settings.adminEmails = d.settings.adminEmails.filter((email) => email !== el.dataset.delAdmin))));
     }
 
     function addLedger() {
-      $("modal").innerHTML = `<div class="card"><h3>新增交易</h3><div class="form-grid"><label>日期<input id="txDate" type="date" value="${today()}"></label><label>類型<select id="txType"><option value="income">收入</option><option value="expense">支出</option><option value="advance">代墊</option><option value="reimburse">退代墊</option><option value="transfer">資金移轉</option></select></label><label>社團<select id="txClub">${CLUBS.map((c) => `<option>${c}</option>`).join("")}</select></label><label>方式<select id="txMethod"><option value="cash">現金</option><option value="bank">銀行/託管</option></select></label><label>類別<input id="txCategory" value="課費"></label><label>金額<input id="txAmount" type="number" min="0"></label><label>付款/經手人<input id="txMember" value="品in"></label><label class="wide">項目<input id="txItem" placeholder="例如：3月社課收入"></label><label class="wide">備註<textarea id="txNote"></textarea></label></div><div class="actions"><button class="secondary" data-close>取消</button><button data-create-tx>新增</button></div></div>`;
-      $("modal").classList.add("show");
-      $("modal").querySelector("[data-close]").onclick = () => $("modal").classList.remove("show");
-      $("modal").querySelector("[data-create-tx]").onclick = () => {
+      const modal = $("modal");
+      modal.innerHTML = `
+        <div class="bg-white rounded-2xl p-6 max-w-lg w-full shadow-2xl border border-slate-100 animate-fade-in space-y-4">
+          <div class="border-b border-slate-100 pb-2">
+            <h3 class="font-extrabold text-slate-800 text-lg m-0">新增交易項目</h3>
+          </div>
+          
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <label class="block text-xs font-bold text-slate-500">交易日期
+              <input id="txDate" type="date" value="${today()}" class="mt-1 bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-1">
+            </label>
+            
+            <label class="block text-xs font-bold text-slate-500">交易類型
+              <select id="txType" class="mt-1 bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-1">
+                <option value="income">一般收入</option>
+                <option value="expense">一般支出</option>
+                <option value="advance">幹部個人代墊 (公帳未付)</option>
+                <option value="reimburse">社團歸還代墊 (公帳歸還)</option>
+                <option value="transfer">資金移轉 (現金袋 ↔ 銀行)</option>
+              </select>
+            </label>
+
+            <label class="block text-xs font-bold text-slate-500">歸屬對象
+              <select id="txClub" class="mt-1 bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-1">
+                ${CLUBS.map((c) => `<option>${c}</option>`).join("")}
+              </select>
+            </label>
+
+            <label class="block text-xs font-bold text-slate-500">收付管道
+              <select id="txMethod" class="mt-1 bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-1">
+                <option value="cash">💵 現金袋 (實體現金)</option>
+                <option value="bank">🏦 銀行帳戶 / 品印託管</option>
+              </select>
+            </label>
+
+            <label class="block text-xs font-bold text-slate-500">會計科目
+              <input id="txCategory" value="課費" class="mt-1 bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-1">
+            </label>
+
+            <label class="block text-xs font-bold text-slate-500">交易金額 (NT$)
+              <input id="txAmount" type="number" min="0" class="mt-1 bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono font-bold focus:ring-1">
+            </label>
+
+            <label class="block text-xs font-bold text-slate-500 sm:col-span-2">經手 / 代墊幹部
+              <input id="txMember" value="品in" class="mt-1 bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-1">
+            </label>
+
+            <label class="block text-xs font-bold text-slate-500 sm:col-span-2">交易項目說明
+              <input id="txItem" placeholder="例如：114-2期初社員大會便當" class="mt-1 bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-1">
+            </label>
+
+            <label class="block text-xs font-bold text-slate-500 sm:col-span-2">交易備註
+              <textarea id="txNote" class="mt-1 bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-1 h-14 resize-none" placeholder="選填..."></textarea>
+            </label>
+          </div>
+
+          <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
+            <button class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs px-4 py-2.5 rounded-xl transition-all" data-close>取消</button>
+            <button class="bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs px-5 py-2.5 rounded-xl transition-all shadow-sm active:scale-95" data-create-tx>登入帳目</button>
+          </div>
+        </div>
+      `;
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+      modal.querySelector("[data-close]").onclick = () => {
+        modal.classList.add("hidden");
+        modal.classList.remove("flex");
+      };
+      modal.querySelector("[data-create-tx]").onclick = () => {
         const item = $("txItem").value.trim();
         const amount = Number($("txAmount").value);
         if (!item || !amount) return showAlert("請完整填寫項目與金額。");
         updateData((d) => d.finance.ledger.push({ id: `t_${Date.now()}`, date: $("txDate").value, type: $("txType").value, category: $("txCategory").value.trim(), item, amount, club: $("txClub").value, paymentMethod: $("txMethod").value, member: $("txMember").value.trim(), note: $("txNote").value.trim() }));
-        $("modal").classList.remove("show");
+        modal.classList.add("hidden");
+        modal.classList.remove("flex");
       };
     }
 
