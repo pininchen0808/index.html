@@ -105,6 +105,12 @@
         const ExternalLinkIcon = (p) => <Icon {...p} path='<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>' />;
         const SettingsIcon = (p) => <Icon {...p} path='<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>' />;
         const ShieldCheckIcon = (p) => <Icon {...p} path='<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/>' />;
+        const BellIcon = (p) => <Icon {...p} path='<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>' />;
+        const CalendarIcon = (p) => <Icon {...p} path='<rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>' />;
+        const MapPinIcon = (p) => <Icon {...p} path='<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>' />;
+        const PinIcon = (p) => <Icon {...p} path='<line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/>' />;
+        const CheckCircleIcon = (p) => <Icon {...p} path='<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>' />;
+        const AlertCircleIcon = (p) => <Icon {...p} path='<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>' />;
 
         // --- 2. 預設資料生成 ---
         const generateDefaultData = () => {
@@ -123,6 +129,8 @@
             invoice: { company: { name: '天茂企管顧問有限公司', taxId: '89177254' }, months: monthsData },
             competition: { daTiao: { newMembers: 0, activities: 0, posts: [] }, ouDouK: { newMembers: 0, activities: 0, posts: [] } },
             videos: [],
+            announcements: [],
+            activities: [],
             settings: { adminEmails: [] }
           };
         };
@@ -1043,6 +1051,416 @@
           );
         };
 
+        // --- NEW: 公告/通知 Tab ---
+        const AnnouncementTab = ({ data, isEditing, setData, isAdmin, currentUser }) => {
+          const [showForm, setShowForm] = useState(false);
+          const [title, setTitle] = useState('');
+          const [content, setContent] = useState('');
+          const [type, setType] = useState('info'); // info, warning, success
+          const [pinned, setPinned] = useState(false);
+          const [targetClub, setTargetClub] = useState('all');
+
+          const announcements = (data.announcements || []).sort((a, b) => {
+            if (a.pinned && !b.pinned) return -1;
+            if (!a.pinned && b.pinned) return 1;
+            return new Date(b.createdAt) - new Date(a.createdAt);
+          });
+
+          const handleAdd = () => {
+            if (!title.trim() || !content.trim()) return alert('請填寫標題與內容！');
+            const newData = JSON.parse(JSON.stringify(data));
+            if (!newData.announcements) newData.announcements = [];
+            newData.announcements.push({
+              id: `ann_${Date.now()}`,
+              title: title.trim(),
+              content: content.trim(),
+              type,
+              pinned,
+              targetClub,
+              author: currentUser?.displayName || '管理員',
+              createdAt: new Date().toISOString().split('T')[0]
+            });
+            setData(newData);
+            setShowForm(false);
+            setTitle(''); setContent(''); setType('info'); setPinned(false); setTargetClub('all');
+          };
+
+          const handleDelete = (id) => {
+            if (!confirm('確定要刪除此公告嗎？')) return;
+            const newData = JSON.parse(JSON.stringify(data));
+            newData.announcements = newData.announcements.filter(a => a.id !== id);
+            setData(newData);
+          };
+
+          const handleTogglePin = (id) => {
+            const newData = JSON.parse(JSON.stringify(data));
+            const idx = newData.announcements.findIndex(a => a.id === id);
+            if (idx > -1) newData.announcements[idx].pinned = !newData.announcements[idx].pinned;
+            setData(newData);
+          };
+
+          const typeStyles = {
+            info: { bar: 'bg-blue-500', badge: 'bg-blue-100 text-blue-800 border-blue-200', icon: <BellIcon size={16} className="text-blue-600" />, label: '一般通知' },
+            warning: { bar: 'bg-amber-500', badge: 'bg-amber-100 text-amber-800 border-amber-200', icon: <AlertCircleIcon size={16} className="text-amber-600" />, label: '重要提醒' },
+            success: { bar: 'bg-green-500', badge: 'bg-green-100 text-green-800 border-green-200', icon: <CheckCircleIcon size={16} className="text-green-600" />, label: '好消息' }
+          };
+
+          const clubBadge = (tc) => tc === 'all' ? '全體社員' : tc === 'daTiao' ? '一起大跳社' : '歐豆K社';
+          const clubBadgeColor = (tc) => tc === 'all' ? 'bg-slate-100 text-slate-600' : tc === 'daTiao' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700';
+
+          return (
+            <div className="space-y-5 animate-in fade-in duration-300">
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-extrabold text-slate-800 flex items-center gap-2"><BellIcon size={22} className="text-blue-600" /> 公告與通知</h2>
+                  <p className="text-xs text-slate-500 mt-0.5">共 {announcements.length} 則公告，{announcements.filter(a=>a.pinned).length} 則置頂</p>
+                </div>
+                {isAdmin && (
+                  <button onClick={() => setShowForm(true)} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-sm transition-all active:scale-95">
+                    <Plus size={16} /> 發布公告
+                  </button>
+                )}
+              </div>
+
+              {/* 新增公告 Modal */}
+              {showForm && (
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+                  <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl overflow-hidden animate-in zoom-in-95 duration-200">
+                    <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+                      <h4 className="font-extrabold text-slate-800 flex items-center gap-2"><BellIcon size={18} className="text-blue-600" /> 發布新公告</h4>
+                      <button onClick={() => setShowForm(false)} className="text-slate-400 hover:text-slate-600 text-xl font-bold">×</button>
+                    </div>
+                    <div className="p-6 space-y-4">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">類型</label>
+                          <select value={type} onChange={e=>setType(e.target.value)} className="w-full px-3 py-2 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500">
+                            <option value="info">一般通知</option>
+                            <option value="warning">重要提醒</option>
+                            <option value="success">好消息</option>
+                          </select>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">對象社團</label>
+                          <select value={targetClub} onChange={e=>setTargetClub(e.target.value)} className="w-full px-3 py-2 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500">
+                            <option value="all">全體社員</option>
+                            <option value="daTiao">一起大跳社</option>
+                            <option value="ouDouK">歐豆K社</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">公告標題</label>
+                        <input type="text" value={title} onChange={e=>setTitle(e.target.value)} placeholder="輸入公告標題" className="w-full px-3 py-2 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 font-bold" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">公告內容</label>
+                        <textarea value={content} onChange={e=>setContent(e.target.value)} placeholder="輸入公告詳細內容..." rows={4} className="w-full px-3 py-2 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 resize-none leading-relaxed" />
+                      </div>
+                      <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <input type="checkbox" checked={pinned} onChange={e=>setPinned(e.target.checked)} className="w-4 h-4 rounded text-blue-600" />
+                        <span className="text-sm text-slate-700 font-medium"><PinIcon size={14} className="inline mr-1 text-amber-500" />置頂此公告</span>
+                      </label>
+                      <div className="flex gap-3 pt-2">
+                        <button onClick={() => setShowForm(false)} className="flex-1 px-4 py-2 rounded-xl border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50">取消</button>
+                        <button onClick={handleAdd} className="flex-1 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold shadow-sm transition-colors">確認發布</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 公告列表 */}
+              <div className="space-y-3">
+                {announcements.length === 0 && (
+                  <div className="bg-white rounded-xl border border-slate-200 py-16 text-center text-slate-400">
+                    <BellIcon size={40} className="mx-auto mb-3 opacity-30" />
+                    <p className="text-sm font-medium">目前尚無任何公告</p>
+                    {isAdmin && <p className="text-xs mt-1">點選右上角「發布公告」新增第一則公告</p>}
+                  </div>
+                )}
+                {announcements.map(ann => {
+                  const ts = typeStyles[ann.type] || typeStyles.info;
+                  return (
+                    <div key={ann.id} className={`bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex ${ann.pinned ? 'ring-2 ring-amber-300' : ''}`}>
+                      <div className={`w-1.5 flex-shrink-0 ${ts.bar}`} />
+                      <div className="flex-1 p-4 sm:p-5">
+                        <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            {ann.pinned && <span className="flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full"><PinIcon size={10} /> 置頂</span>}
+                            <span className={`flex items-center gap-1 text-[10px] font-bold border px-2 py-0.5 rounded-full ${ts.badge}`}>{ts.icon} {ts.label}</span>
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${clubBadgeColor(ann.targetClub)}`}>{clubBadge(ann.targetClub)}</span>
+                          </div>
+                          {isAdmin && (
+                            <div className="flex items-center gap-1">
+                              <button onClick={() => handleTogglePin(ann.id)} title={ann.pinned ? '取消置頂' : '置頂'} className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-amber-500 transition-colors">
+                                <PinIcon size={14} />
+                              </button>
+                              <button onClick={() => handleDelete(ann.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors">
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                        <h3 className="font-extrabold text-slate-900 text-base mb-1">{ann.title}</h3>
+                        <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-wrap">{ann.content}</p>
+                        <div className="flex items-center gap-3 mt-3 text-xs text-slate-400">
+                          <span className="flex items-center gap-1"><Clock size={12} /> {ann.createdAt}</span>
+                          <span>發布人：{ann.author}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        };
+
+        // --- NEW: 活動管理 Tab ---
+        const ActivityTab = ({ data, isEditing, setData, isAdmin, currentUser }) => {
+          const [showForm, setShowForm] = useState(false);
+          const [filterStatus, setFilterStatus] = useState('all');
+          const [form, setForm] = useState({ title: '', date: '', endDate: '', location: '', club: 'all', description: '', maxAttendees: '', status: 'upcoming' });
+
+          const activities = (data.activities || []).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+          const filteredActivities = activities.filter(act => {
+            if (filterStatus === 'all') return true;
+            return act.status === filterStatus;
+          });
+
+          const handleAdd = () => {
+            if (!form.title.trim() || !form.date) return alert('請填寫活動名稱與日期！');
+            const newData = JSON.parse(JSON.stringify(data));
+            if (!newData.activities) newData.activities = [];
+            newData.activities.push({
+              id: `act_${Date.now()}`,
+              ...form,
+              maxAttendees: Number(form.maxAttendees) || 0,
+              attendees: [],
+              createdBy: currentUser?.displayName || '管理員',
+              createdAt: new Date().toISOString().split('T')[0]
+            });
+            setData(newData);
+            setShowForm(false);
+            setForm({ title: '', date: '', endDate: '', location: '', club: 'all', description: '', maxAttendees: '', status: 'upcoming' });
+          };
+
+          const handleDelete = (id) => {
+            if (!confirm('確定要刪除此活動嗎？')) return;
+            const newData = JSON.parse(JSON.stringify(data));
+            newData.activities = newData.activities.filter(a => a.id !== id);
+            setData(newData);
+          };
+
+          const handleStatusChange = (id, newStatus) => {
+            const newData = JSON.parse(JSON.stringify(data));
+            const idx = newData.activities.findIndex(a => a.id === id);
+            if (idx > -1) newData.activities[idx].status = newStatus;
+            setData(newData);
+          };
+
+          const handleAttend = (actId) => {
+            const userEmail = currentUser?.email;
+            const userName = currentUser?.displayName || userEmail;
+            if (!userEmail) return;
+            const newData = JSON.parse(JSON.stringify(data));
+            const act = newData.activities.find(a => a.id === actId);
+            if (!act) return;
+            if (!act.attendees) act.attendees = [];
+            const alreadyIn = act.attendees.find(a => a.email === userEmail);
+            if (alreadyIn) {
+              act.attendees = act.attendees.filter(a => a.email !== userEmail);
+            } else {
+              if (act.maxAttendees > 0 && act.attendees.length >= act.maxAttendees) return alert('此活動已額滿！');
+              act.attendees.push({ email: userEmail, name: userName, joinedAt: new Date().toISOString().split('T')[0] });
+            }
+            setData(newData);
+          };
+
+          const statusConfig = {
+            upcoming: { label: '即將舉行', color: 'bg-blue-100 text-blue-800 border-blue-200' },
+            ongoing: { label: '進行中', color: 'bg-green-100 text-green-800 border-green-200' },
+            completed: { label: '已結束', color: 'bg-slate-100 text-slate-600 border-slate-200' },
+            cancelled: { label: '已取消', color: 'bg-red-100 text-red-700 border-red-200' }
+          };
+
+          const clubColor = (c) => c === 'all' ? 'bg-slate-100 text-slate-700' : c === 'daTiao' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700';
+          const clubLabel = (c) => c === 'all' ? '聯合活動' : c === 'daTiao' ? '一起大跳社' : '歐豆K社';
+
+          const today = new Date().toISOString().split('T')[0];
+
+          return (
+            <div className="space-y-5 animate-in fade-in duration-300">
+              {/* Header */}
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-xl font-extrabold text-slate-800 flex items-center gap-2"><CalendarIcon size={22} className="text-blue-600" /> 活動管理</h2>
+                  <p className="text-xs text-slate-500 mt-0.5">共 {activities.length} 個活動，{activities.filter(a=>a.status==='upcoming').length} 個即將舉行</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <select value={filterStatus} onChange={e=>setFilterStatus(e.target.value)} className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold bg-white">
+                    <option value="all">全部狀態</option>
+                    <option value="upcoming">即將舉行</option>
+                    <option value="ongoing">進行中</option>
+                    <option value="completed">已結束</option>
+                    <option value="cancelled">已取消</option>
+                  </select>
+                  {isAdmin && (
+                    <button onClick={() => setShowForm(true)} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 shadow-sm transition-all active:scale-95">
+                      <Plus size={16} /> 新增活動
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* 新增活動 Modal */}
+              {showForm && (
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+                  <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+                    <div className="bg-slate-50 px-6 py-4 border-b border-slate-100 flex justify-between items-center sticky top-0 z-10">
+                      <h4 className="font-extrabold text-slate-800 flex items-center gap-2"><CalendarIcon size={18} className="text-blue-600" /> 新增活動</h4>
+                      <button onClick={() => setShowForm(false)} className="text-slate-400 hover:text-slate-600 text-xl font-bold">×</button>
+                    </div>
+                    <div className="p-6 space-y-4">
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">活動名稱 *</label>
+                        <input type="text" value={form.title} onChange={e=>setForm({...form, title: e.target.value})} placeholder="輸入活動名稱" className="w-full px-3 py-2 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 font-bold" />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">開始日期 *</label>
+                          <input type="date" value={form.date} onChange={e=>setForm({...form, date: e.target.value})} className="w-full px-3 py-2 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500" />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">結束日期</label>
+                          <input type="date" value={form.endDate} onChange={e=>setForm({...form, endDate: e.target.value})} className="w-full px-3 py-2 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500" />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">主辦社團</label>
+                          <select value={form.club} onChange={e=>setForm({...form, club: e.target.value})} className="w-full px-3 py-2 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500">
+                            <option value="all">聯合活動</option>
+                            <option value="daTiao">一起大跳社</option>
+                            <option value="ouDouK">歐豆K社</option>
+                          </select>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">人數上限 (0=無限)</label>
+                          <input type="number" min="0" value={form.maxAttendees} onChange={e=>setForm({...form, maxAttendees: e.target.value})} placeholder="0" className="w-full px-3 py-2 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500" />
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">地點</label>
+                        <input type="text" value={form.location} onChange={e=>setForm({...form, location: e.target.value})} placeholder="輸入活動地點" className="w-full px-3 py-2 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500" />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">活動說明</label>
+                        <textarea value={form.description} onChange={e=>setForm({...form, description: e.target.value})} placeholder="輸入活動詳細說明..." rows={3} className="w-full px-3 py-2 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 resize-none" />
+                      </div>
+                      <div className="flex gap-3 pt-2">
+                        <button onClick={() => setShowForm(false)} className="flex-1 px-4 py-2 rounded-xl border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50">取消</button>
+                        <button onClick={handleAdd} className="flex-1 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold shadow-sm transition-colors">建立活動</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 活動列表 */}
+              <div className="space-y-4">
+                {filteredActivities.length === 0 && (
+                  <div className="bg-white rounded-xl border border-slate-200 py-16 text-center text-slate-400">
+                    <CalendarIcon size={40} className="mx-auto mb-3 opacity-30" />
+                    <p className="text-sm font-medium">目前無符合條件的活動</p>
+                    {isAdmin && filterStatus === 'all' && <p className="text-xs mt-1">點選右上角「新增活動」建立第一個活動</p>}
+                  </div>
+                )}
+                {filteredActivities.map(act => {
+                  const sc = statusConfig[act.status] || statusConfig.upcoming;
+                  const attendeeCount = (act.attendees || []).length;
+                  const isAttending = (act.attendees || []).some(a => a.email === currentUser?.email);
+                  const isFull = act.maxAttendees > 0 && attendeeCount >= act.maxAttendees;
+                  const isPast = act.date < today;
+
+                  return (
+                    <div key={act.id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                      <div className="p-5">
+                        <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className={`text-[10px] font-bold border px-2 py-0.5 rounded-full ${sc.color}`}>{sc.label}</span>
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${clubColor(act.club)}`}>{clubLabel(act.club)}</span>
+                          </div>
+                          {isAdmin && (
+                            <div className="flex items-center gap-1">
+                              <select value={act.status} onChange={e => handleStatusChange(act.id, e.target.value)} className="text-xs border border-slate-200 rounded-lg px-2 py-1 bg-white font-medium text-slate-600">
+                                <option value="upcoming">即將舉行</option>
+                                <option value="ongoing">進行中</option>
+                                <option value="completed">已結束</option>
+                                <option value="cancelled">已取消</option>
+                              </select>
+                              <button onClick={() => handleDelete(act.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors">
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
+                        <h3 className="font-extrabold text-slate-900 text-lg mb-2">{act.title}</h3>
+
+                        <div className="flex flex-wrap gap-4 text-sm text-slate-500 mb-3">
+                          <span className="flex items-center gap-1.5"><CalendarIcon size={14} className="text-blue-500" /> {act.date}{act.endDate && act.endDate !== act.date ? ` — ${act.endDate}` : ''}</span>
+                          {act.location && <span className="flex items-center gap-1.5"><MapPinIcon size={14} className="text-rose-500" /> {act.location}</span>}
+                          <span className="flex items-center gap-1.5"><Users size={14} className="text-indigo-500" /> {attendeeCount}{act.maxAttendees > 0 ? ` / ${act.maxAttendees} 人` : ' 人報名'}</span>
+                        </div>
+
+                        {act.description && <p className="text-slate-600 text-sm leading-relaxed mb-4 bg-slate-50 rounded-lg px-3 py-2 border border-slate-100 whitespace-pre-wrap">{act.description}</p>}
+
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          {/* 報名按鈕 */}
+                          {act.status === 'upcoming' || act.status === 'ongoing' ? (
+                            <button
+                              onClick={() => handleAttend(act.id)}
+                              disabled={!isAttending && isFull}
+                              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all active:scale-95 shadow-sm ${
+                                isAttending ? 'bg-green-600 hover:bg-green-700 text-white' :
+                                isFull ? 'bg-slate-200 text-slate-400 cursor-not-allowed' :
+                                'bg-blue-600 hover:bg-blue-700 text-white'
+                              }`}
+                            >
+                              {isAttending ? <><CheckCircleIcon size={16} /> 已報名 (點擊取消)</> : isFull ? '已額滿' : <><Plus size={16} /> 我要報名</>}
+                            </button>
+                          ) : <div />}
+
+                          {/* 報名人員列表 (管理員) */}
+                          {isAdmin && attendeeCount > 0 && (
+                            <details className="group">
+                              <summary className="text-xs text-blue-600 font-bold cursor-pointer list-none flex items-center gap-1 hover:text-blue-800">
+                                <Users size={12} /> 查看 {attendeeCount} 位報名者
+                              </summary>
+                              <div className="mt-2 p-3 bg-slate-50 rounded-lg border border-slate-100 max-h-40 overflow-y-auto">
+                                {(act.attendees || []).map((a, i) => (
+                                  <div key={i} className="flex items-center justify-between text-xs py-1 border-b border-slate-100 last:border-0">
+                                    <span className="font-medium text-slate-700">{a.name}</span>
+                                    <span className="text-slate-400">{a.joinedAt}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </details>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        };
+
         // --- 9. 元件：系統與權限設定 ---
         const SettingsTab = ({ data, setData }) => {
           const [newEmail, setNewEmail] = useState('');
@@ -1281,7 +1699,7 @@
               
               // 當切換身分為一般社員時，若當前選取的分頁是管理者專屬，則強制跳回財務分頁
               if (user && data && !checkIsAdmin(user, data)) {
-                setActiveTab((prev) => (prev === 'members' || prev === 'invoice' || prev === 'competition' || prev === 'settings') ? 'videos' : prev);
+                setActiveTab((prev) => (prev === 'members' || prev === 'invoice' || prev === 'competition' || prev === 'settings') ? 'announcements' : prev);
               }
             });
             return () => unsubscribeAuth();
@@ -1292,11 +1710,11 @@
             if (currentUser && data) {
               const isAdminUser = checkIsAdmin(currentUser, data);
               if (!isAdminUser) {
-                // 一般社員首頁：課程影片
-                setActiveTab('videos');
+                // 一般社員首頁：公告通知
+                setActiveTab('announcements');
               } else {
-                // 幹部首頁：財務總表
-                setActiveTab('finance');
+                // 幹部首頁：公告通知
+                setActiveTab('announcements');
               }
             }
           }, [currentUser, data]);
@@ -1457,6 +1875,10 @@
                   // 修復 6：加入動態管理員設定
                   if (!mergedData.settings) { mergedData.settings = { adminEmails: [] }; needsUpdate = true; }
                   if (!mergedData.settings.adminEmails) { mergedData.settings.adminEmails = []; needsUpdate = true; }
+
+                  // 修復 7：加入公告與活動模組
+                  if (!mergedData.announcements) { mergedData.announcements = []; needsUpdate = true; }
+                  if (!mergedData.activities) { mergedData.activities = []; needsUpdate = true; }
 
                   if (mergedData.course?.members) {
                       mergedData.course.members.forEach(m => {
@@ -1640,6 +2062,8 @@
                 {/* 🔒 角色分頁分流排版 */}
                 {adminRole ? (
                   <nav className="flex overflow-x-auto bg-white rounded-xl border border-slate-200 shadow-sm hide-scrollbar">
+                    <TabButton active={activeTab === 'announcements'} onClick={() => setActiveTab('announcements')} icon={BellIcon} label="公告通知" />
+                    <TabButton active={activeTab === 'activities'} onClick={() => setActiveTab('activities')} icon={CalendarIcon} label="活動管理" />
                     <TabButton active={activeTab === 'finance'} onClick={() => setActiveTab('finance')} icon={DollarSign} label="財務總表" />
                     <TabButton active={activeTab === 'members'} onClick={() => setActiveTab('members')} icon={ContactIcon} label="社員名單" />
                     <TabButton active={activeTab === 'registration'} onClick={() => setActiveTab('registration')} icon={ListChecks} label="課程報名" />
@@ -1650,6 +2074,8 @@
                   </nav>
                 ) : (
                   <nav className="flex overflow-x-auto bg-white rounded-xl border border-slate-200 shadow-sm hide-scrollbar">
+                    <TabButton active={activeTab === 'announcements'} onClick={() => setActiveTab('announcements')} icon={BellIcon} label="公告通知" />
+                    <TabButton active={activeTab === 'activities'} onClick={() => setActiveTab('activities')} icon={CalendarIcon} label="活動管理" />
                     <TabButton active={activeTab === 'videos'} onClick={() => setActiveTab('videos')} icon={VideoIcon} label="課程影片" />
                     <TabButton active={activeTab === 'registration'} onClick={() => setActiveTab('registration')} icon={ListChecks} label="課程報名" />
                     <TabButton active={activeTab === 'finance'} onClick={() => setActiveTab('finance')} icon={DollarSign} label="財務總表" />
@@ -1657,6 +2083,8 @@
                 )}
 
                 <main className="pt-2">
+                  {activeTab === 'announcements' && <AnnouncementTab data={data} isEditing={isEditing} setData={handleSaveSetting} isAdmin={adminRole} currentUser={currentUser} />}
+                  {activeTab === 'activities' && <ActivityTab data={data} isEditing={isEditing} setData={handleSaveSetting} isAdmin={adminRole} currentUser={currentUser} />}
                   {activeTab === 'finance' && <FinanceTab data={data} isEditing={isEditing} setData={handleSaveSetting} isAdmin={adminRole} setCustomModal={setCustomModal} />}
                   {adminRole && activeTab === 'members' && <MemberListTab data={data} isEditing={isEditing} setData={setData} />}
                   {activeTab === 'registration' && <RegistrationTab data={data} isEditing={isEditing} setData={setData} isAdmin={adminRole} />}
