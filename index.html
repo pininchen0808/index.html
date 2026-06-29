@@ -342,9 +342,7 @@
 
           ],
 
-          budget: { income: 9000, expense: 12000 },
-
-          subsidyMethod: 'average_by_course'
+          budget: { income: 9000, expense: 12000 }
 
         },
 
@@ -436,51 +434,9 @@
 
 
 
-      // ── 資料來源與計算 (財務分析 Dashboard) ──────────────────────
-
-      // 補助款與分攤計算基礎 (將非課費收入視為固定補助)
-
-      const fixedSubsidyTotal = ledger
-
-          .filter(t => t.type === 'income' && !t.category.includes('課費'))
-
-          .reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
-
-
-
       const columns = data.course?.columns || [];
 
-      const members = data.course?.members || [];
-
-
-
-      // 分攤用總和
-
-      const totalCourseIncome = columns.reduce((sum, col) => sum + members.reduce((s, m) => s + (Number(m.payments?.[col.id]) || 0), 0), 0);
-
-      const totalRegCount = columns.reduce((sum, col) => sum + members.filter(m => m.registered?.[col.id]).length, 0);
-
-
-
-      const subsidyMethod = data.finance?.subsidyMethod || 'average_by_course';
-
-
-
       // ── 處理事件 ─────────────────────────────────────────────
-
-      const handleSubsidyMethodChange = (val) => {
-
-          const newData = JSON.parse(JSON.stringify(data));
-
-          if (!newData.finance) newData.finance = {};
-
-          newData.finance.subsidyMethod = val;
-
-          setData(newData);
-
-      };
-
-
 
       const handleAddTransactionSubmit = (e) => {
 
